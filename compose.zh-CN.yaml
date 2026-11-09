@@ -1,0 +1,18 @@
+services:
+  rewards-dashboard:
+    image: rewards-dashboard-zh-cn:local
+    build:
+      context: ./rewards-dashboard
+    container_name: rewards-dashboard
+    restart: unless-stopped
+    ports:
+      - "8890:8890"
+    environment:
+      CONTROL_API_URL: "${CONTROL_API_URL:-http://microsoft-rewards-script:3010}"
+      CONTROL_API_TOKEN: "${API_TOKEN:?请在 .env 设置与微软脚本相同的 API_TOKEN}"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/data
+    security_opt:
+      - no-new-privileges:true
+# 面板与微软脚本需加入同一 Docker 网络；也可将本服务复制进脚本的 Compose。

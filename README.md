@@ -1,5 +1,7 @@
 # Rewards Dashboard
 
+> **简体中文 fork：** [中文说明与部署](README.zh-CN.md) · [安全同步上游](README.zh-CN.md#怎么同步上游并保留中文)。本版本新增人工编写的简体中文，可切换 English；原始日志、配置键和 API 行为保留原样。以下保留原作者说明。运行中文版本请从本仓库构建，不要直接拉取上游镜像。
+
 A companion dashboard for [microsoft-rewards-script](https://github.com/thenetsky/microsoft-rewards-script), driven entirely over HTTP by the bot's [Control API](https://github.com/thenetsky/microsoft-rewards-script/tree/v4/scripts/api) (`API_MODE=true`). It shows account status, point totals, and trends at `http://<host-ip>:8890`, and can start/stop/schedule runs and edit the bot's config.
 
 ## Screenshots

@@ -1,0 +1,20 @@
+name: Chinese language checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node scripts/check.mjs
+      - run: node --test tests/*.test.mjs
+      - name: Check image can build
+        run: docker build -t rewards-dashboard-zh-cn:check ./rewards-dashboard
