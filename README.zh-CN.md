@@ -21,7 +21,7 @@ git clone https://github.com/Foch0x97/rewards-dashboard-zh-cn.git
 cd rewards-dashboard-zh-cn
 ```
 
-参考 `compose.zh-CN.yaml`，把面板服务加入微软脚本所在项目或共同网络。`CONTROL_API_URL` 指向微软脚本的 Control API；`CONTROL_API_TOKEN` 要与脚本的 `API_TOKEN` 相同。原作者的 API 权限说明仍适用，详情见 [原版说明](README.md)。
+参考 `compose.zh-CN.yaml`，把面板服务加入微软脚本所在项目或共同网络。`CONTROL_API_URL` 指向微软脚本的 Control API；`CONTROL_API_TOKEN` 要与脚本的 `API_TOKEN` 相同。原作者的 API 权限说明仍适用，详情见 [原版英文说明](README.en.md)。
 
 ```sh
 docker compose -f compose.zh-CN.yaml up -d --build
@@ -54,7 +54,7 @@ node --test tests/*.test.mjs
 
 本机 UI 预览：`node scripts/preview.cjs`，访问 `http://127.0.0.1:18990`。预览使用模拟 API 和虚拟账号，不连接微软；数据放在被 Git 忽略的 `.qa/`。
 
-修改文案时编辑 `public/locales/zh-CN.js`。动态句子使用完整句式匹配，不做全局单词替换。新配置项缺少翻译时，检查会提示补齐。
+修改文案时编辑 `rewards-dashboard/public/locales/zh-CN.js`。动态句子使用完整句式匹配，不做全局单词替换。新配置项缺少翻译时，检查会提示补齐。
 
 ## 原作者与许可
 

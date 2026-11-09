@@ -1,155 +1,236 @@
-# Rewards Dashboard
+# Rewards Dashboard 简体中文版
 
-> **简体中文 fork：** [中文说明与部署](README.zh-CN.md) · [安全同步上游](README.zh-CN.md#怎么同步上游并保留中文)。本版本新增人工编写的简体中文，可切换 English；原始日志、配置键和 API 行为保留原样。以下保留原作者说明。运行中文版本请从本仓库构建，不要直接拉取上游镜像。
+[简体中文](README.md) · [English / 原版说明](README.en.md) · [中文版维护说明](README.zh-CN.md)
 
-A companion dashboard for [microsoft-rewards-script](https://github.com/thenetsky/microsoft-rewards-script), driven entirely over HTTP by the bot's [Control API](https://github.com/thenetsky/microsoft-rewards-script/tree/v4/scripts/api) (`API_MODE=true`). It shows account status, point totals, and trends at `http://<host-ip>:8890`, and can start/stop/schedule runs and edit the bot's config.
+为 [Microsoft Rewards Script](https://github.com/thenetsky/microsoft-rewards-script) 提供的配套管理面板。通过脚本的 **Control API（控制接口）** 读取账号状态、积分总额和变化趋势，也可以启动、停止、安排任务及修改脚本配置。默认访问地址为 `http://主机IP:8890`。
 
-## Screenshots
+本仓库 fork 自 [mgrimace/rewards-dashboard](https://github.com/mgrimace/rewards-dashboard)，增加人工编写的简体中文界面，保留英文切换与上游功能。
 
-| Desktop | Mobile |
+> [!IMPORTANT]
+> 中文版需要从**本仓库源码构建**。上游的 `ghcr.io/mgrimace/rewards-dashboard:latest` 镜像不包含这里的中文修改。面板本身不执行积分任务，需要连接已经启用 Control API 的微软脚本。
+
+## 中文版增加了什么
+
+- **中英文切换**：右上角选择「简体中文」或 English，首次访问默认中文，当前浏览器会记住选择。
+- **按功能含义编写中文**：覆盖总览、账号、日志工具栏、运行记录、定时计划、配置与诊断，区分「已上报积分」「尚未确认」和「已完成」。
+- **保留技术信息原文**：原始日志、配置 JSON、参数名、命令和用户输入保持原样，便于查错。
+- **独立语言文件**：中文文案集中在 `rewards-dashboard/public/locales/`，原页面只增加一行加载入口，后端业务逻辑保持原样。
+- **检查与上游同步**：增加文案检查、自动测试和手动同步工作流，通过检查后再更新分支。
+
+没有使用在线翻译服务。上游新增而尚未收录的文案会保留英文，未知接口错误也保留原文。
+
+## 界面预览
+
+下图为**上游原版界面**，用于展示布局；本仓库在同一界面中增加中文语言选项。
+
+| 电脑端 | 手机端 |
 | --- | --- |
-| ![Desktop screenshot](./docs/Screenshot-dash.png) | ![Mobile screenshot](./docs/Screenshot-mobile.png) |
+| ![上游电脑端界面](docs/Screenshot-dash.png) | ![上游手机端界面](docs/Screenshot-mobile.png) |
 
-## Features
-- **Local only** - all data is stored locally, your account data is your own.
-- **Account overview** — points per account, run status, and error highlights
-- **Point accumulation bars** — see trends and errors at a glance with daily blocks per account, with weekly dividers; hover for exact date/points/total
-- **Passwordless codes** — displays passwordless two-digit codes with a live 60-second countdown so you never miss them in the logs
-- **History** — parsed events stored in a local SQLite db so data survives restarts, independent of the bot's own in-memory log buffer
-- **Theme support** — Includes themes: Nord, Dracula, Catppuccin, Gruvbox, Tokyo Night, and more!
-- **Responsive** - Features a simplified mobile view
+## 主要功能
 
-## Quick start (Docker)
+- **本地保存历史**：积分历史、运行记录、活动记录和面板定时计划保存在本地 SQLite 数据库中，重启后仍然保留。
+- **账号概况**：查看各账号的积分、运行状态和异常提示。
+- **积分趋势**：按天显示积分变化，支持时间轴、热力图等视图，方便发现积分变化与异常。
+- **登录确认码**：从日志中捕获免密登录的两位数确认码，配合 60 秒倒计时显示。
+- **实时日志**：支持级别筛选、搜索、暂停、自动滚动、加载更多、下载与清空显示。
+- **运行控制**：启动、停止、重新运行任务，支持账号选择和定时执行。
+- **主题与移动端布局**：保留 Nord、Dracula、Catppuccin、Gruvbox、Tokyo Night 等主题，以及适合手机使用的布局。
 
-1. On the bot side, enable the Control API — set `API_MODE=true` and `API_TOKEN=<some-long-random-string>` on the `microsoft-rewards-script` service, and expose port `3010`.
+## Docker 部署
 
-> [!CAUTION]
-> These script-side permissions are optional: `API_ALLOW_CONFIG_WRITE=true` allows config changes, `API_ALLOW_CONFIG_REVEAL=true` allows revealing sensitive config values, and `API_ALLOW_SCHEDULE_WRITE=true` allows changing the bot-container schedule. Enable only the capabilities you need; these flags are not required to start the dashboard.
+### 1. 启用微软脚本的控制接口
 
-2. Review this repo's `compose.yaml` and set `CONTROL_API_TOKEN` (in a `.env` file next to it) to that same token.
-3. Build and start the container: `docker compose up -d`.
-4. Visit the dash at `http://<host-ip>:8890`.
-
-> [!WARNING]
-> Both services need to share a Docker network so the dashboard can reach the Control API by container name. 
-> The easiest way to do this is copy the full rewards-dashboard service into your script's compose.yaml. See [sample-stack-compose.yaml](sample-stack-compose.yaml)
-> Alternatively, create a docker network (e..g, `rewards`), and add the following to both the script and the dash compose.yaml
+在 `microsoft-rewards-script` 服务中设置：
 
 ```yaml
-  networks:
-    - rewards
+environment:
+  API_MODE: "true"
+  API_TOKEN: "换成你自己的长随机字符串"
+```
+
+控制接口默认使用 `3010` 端口，面板需要能通过共享 Docker 网络或其他已配置的网络路径访问它。
+
+以下权限在**微软脚本一侧按需启用**，面板启动不要求全部打开：
+
+| 变量 | 作用 |
+| --- | --- |
+| `API_ALLOW_CONFIG_WRITE=true` | 允许面板保存脚本配置。未开启时配置只读，保存返回 403。 |
+| `API_ALLOW_CONFIG_REVEAL=true` | 允许面板显示通知地址、令牌等敏感配置。未开启时显示 `***REDACTED***`。 |
+| `API_ALLOW_SCHEDULE_WRITE=true` | 允许面板修改脚本容器自身的定时计划。 |
+
+### 2. 拉取中文版源码
+
+```sh
+git clone https://github.com/Foch0x97/rewards-dashboard-zh-cn.git
+cd rewards-dashboard-zh-cn
+```
+
+在仓库目录创建 `.env` 文件：
+
+```dotenv
+API_TOKEN=换成与微软脚本相同的长随机字符串
+CONTROL_API_URL=http://microsoft-rewards-script:3010
+```
+
+[compose.zh-CN.yaml](compose.zh-CN.yaml) 会将这里的 `API_TOKEN` 传给面板的 `CONTROL_API_TOKEN`。
+
+### 3. 配置共享网络
+
+通过 `microsoft-rewards-script` 服务名访问接口时，**两个容器必须在同一个 Docker 网络中**。
+
+可以将 `compose.zh-CN.yaml` 中的整个面板服务复制进微软脚本的 Compose 项目，按实际位置调整 `build.context` 和数据目录。项目结构可参考上游的 [sample-stack-compose.yaml](sample-stack-compose.yaml)，中文版仍需使用本仓库的源码构建目录。
+
+也可以创建外部网络：
+
+```sh
+docker network create rewards
+```
+
+随后在两个项目的对应服务中分别加入网络配置。例如面板项目：
+
+```yaml
+services:
+  rewards-dashboard:
+    # 其他原有配置保持不变
+    networks:
+      - rewards
 
 networks:
   rewards:
-    driver: bridge
     external: true
-
 ```
 
-## Quick start (Bare metal)
-Requires Node 22.13+ (uses the built-in `node:sqlite`). Zero npm packages.
+微软脚本项目中也需要给 `microsoft-rewards-script` 服务添加相同的网络配置。以上仅展示网络部分，不是完整 Compose。
 
-```bash
-# in the bot repo
-API_TOKEN=some-long-random-string node scripts/api/server.js
+### 4. 构建并启动
+
+确认接口地址、令牌和网络后执行：
+
+```sh
+docker compose -f compose.zh-CN.yaml up -d --build
 ```
 
-Then point the dashboard at it - `CONTROL_API_TOKEN` must equal the API's `API_TOKEN`:
+打开 `http://主机IP:8890`。例如部署在 `192.168.0.2`，访问地址就是 `http://192.168.0.2:8890`。
 
-```bash
-cp .env.example .env      # edit CONTROL_API_URL + CONTROL_API_TOKEN
-npm start                 # http://localhost:8890
+面板历史默认保存在仓库的 `data` 目录，容器内对应 `/data`。更新和重建时保留这个目录。
+
+## 直接使用 Node.js 运行
+
+上游要求 Node.js **22.13 或更新版本**，使用内置的 `node:sqlite`，不需要安装 npm 依赖。中文版检查工作流使用 Node.js 24。
+
+先启动微软脚本的控制接口，再进入面板程序目录：
+
+```sh
+cd rewards-dashboard
 ```
 
-## Authentication
-Dashboard login protection is configured separately with `DASHBOARD_USERNAME`
-and `DASHBOARD_PASSWORD`. Basic authentication is enabled only when both values
-are non-empty. Leave either one empty to open the dashboard without a browser
-login prompt. This does not disable authentication between the dashboard and the
-Control API; `CONTROL_API_TOKEN` still needs to match the API's `API_TOKEN`.
+在该目录创建 `.env`：
 
+```dotenv
+CONTROL_API_URL=http://127.0.0.1:3010
+CONTROL_API_TOKEN=换成与控制接口相同的API_TOKEN
+TZ=Asia/Shanghai
+```
 
-## Optional API flags
+启动：
 
-Two features are gated on the _API_ side, and are off by default:
+```sh
+npm start
+```
 
-| Set on the Control API         | What it unlocks                                                                                                       |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| `API_ALLOW_CONFIG_WRITE=true`  | The **Config** tab can save changes. Without it, config is read-only and saving returns a 403 (the tab tells you so). |
-| `API_ALLOW_CONFIG_REVEAL=true` | The **Config** tab's "reveal secrets" toggle. Without it, webhook URLs and tokens stay `***REDACTED***`.              |
+`127.0.0.1` 只适用于接口与面板直接运行在同一主机的情况，其他情况请填写实际地址。
 
----
+## 面板登录保护
 
-## Tabs
+面板登录与控制接口认证相互独立：
 
-**Overview** - stat cards (accounts, combined balance, last run, accounts in error, next scheduled run), a live run panel with a progress bar and per-account rows while the bot is working, and a recent-activity feed.
+- `DASHBOARD_USERNAME` 和 `DASHBOARD_PASSWORD`：浏览器访问面板时使用的 Basic 认证。两项都不为空才启用，缺少任意一项就不会弹出登录框。
+- `CONTROL_API_TOKEN`：面板服务端访问微软脚本的令牌，必须与脚本的 `API_TOKEN` 相同。
 
-**Accounts** - every configured account, joined with what the logs actually observed: current balance, daily accumulation bars, today's gain, success/error state, current streak, streak protection status and remaining protection days, and a details drawer (slot, geo, language, TOTP, recovery email, proxy, lifetime collected). Accounts live in the bot's `.env`, so this tab reports on them rather than editing them.
+使用 Docker 时，将面板用户名和密码添加到服务的 `environment`；直接运行 Node.js 时，可写入面板目录的 `.env`。Compose 的 `.env` 变量不会自动传入容器，还需在 `environment` 中引用。
 
-**Logs** - live log viewer over SSE. Level filter, text search, pause (buffers while paused), autoscroll, load-more, download, clear.
+## 各页面说明
 
-**Runs** - points collected per day (14/30/90-day views) plus a run history table, and a collapsible list of process exits pulled from the API - which catches crashes that never made it to a `RUN-END` line. A run that dies mid-flight is closed out and marked **Crashed** with its exit code, instead of sitting at "running" forever.
+| 页面 | 功能 |
+| --- | --- |
+| **总览** | 显示账号数量、积分余额、上次运行、异常账号与定时状态，运行期间显示进度和各账号概况。 |
+| **账号** | 汇总账号配置和日志记录，包括积分变化、当天增量、成功或失败状态、连续签到、保护状态及配置摘要。账号仍在脚本的 `.env` 中管理，此页不用于修改账号密码。可显示的数据取决于脚本版本和运行记录。 |
+| **日志** | 通过 SSE 实时接收日志，支持级别筛选、搜索、暂停、自动滚动、加载更多、下载与清空显示。中文界面不会翻译原始日志。 |
+| **运行记录** | 查看最近 14、30、90 天的积分变化、运行历史和进程退出结果。脚本中途崩溃时会记录退出码，避免一直显示「运行中」。 |
+| **定时计划** | 选择由面板或脚本容器执行定时，配置 Cron、排除账号、已有任务时跳过等规则。面板定时支持错过任务后的补跑策略，通常只启用一种定时方式以免重复运行。 |
+| **脚本设置** | 修改常用配置或编辑原始 `config.json`。保存时仅提交实际修改的字段，并防止将 `***REDACTED***` 误写到真实敏感配置中；校验错误会显示在页面上。 |
+| **故障诊断** | 查看脚本保存的错误文本、截图、HTML 页面快照，以及管理登录会话。相关数据需脚本侧支持并启用对应功能。 |
 
-**Schedule** - the dashboard's own cron. Presets, a live-validated cron field with a plain-English description, account exclusions, missed-run recovery, "skip if already running", next/last run times and the last result. It's stored in the dashboard's database and fires a run by pressing Start on the API for you.
+顶部始终保留「开始运行」「停止」「重新运行」按钮。右侧 `⋮` 菜单中还有强制停止和关闭控制接口。日志中出现登录确认码后，页面顶部会显示确认码和倒计时。
 
-**Config** - the bot's `config.json`. Quick toggles for the common booleans, plus a raw JSON editor. Saving sends a **PATCH of only the fields you changed**, never a full document - so the redacted webhook secrets in your view can't be written over the real ones. If you do edit a redacted field, the save is refused with an explanation. Validation errors from the bot's own validator come back inline.
+## 工作原理
 
-**Diagnostics** - the bot's error captures. Error text, screenshot, and the HTML dump, streamed through the dashboard.
+**共享一条事件连接。** 面板服务端与控制接口保持一条 SSE 连接，再将事件广播给浏览器页面，支持断线续传与重连退避。打开多个页面不会按页面数量重复连接脚本。
 
-Above the tabs, a control strip is always visible: **Start**, **Stop**, **Restart**, and behind the ⋮ menu, **Force stop** and **Shut down API**. Login approval codes appear at the top of the page the moment they show up in the logs, with a countdown.
+**日志与历史同时处理。** 日志既实时发送给浏览器，也通过解析器写入 SQLite。控制接口的内存缓冲会随进程退出消失，面板已经保存的历史则保留在数据目录中。
 
----
+**运行中更新积分。** 脚本上报余额和积分变化后，面板会在运行期间更新数据；账号结束时使用 `ACCOUNT-END` 记录校正。统计精度取决于脚本版本和上报内容。
 
-## How it works
+**分层认证。** 控制接口令牌由面板服务端作为 Bearer Token 发送；浏览器访问则使用单独的可选用户名与密码。
 
-**One SSE connection, fanned out.** The server holds a single event stream to the Control API and broadcasts to every open tab (`lib/eventHub.js`), with `Last-Event-ID` resume and reconnect backoff. Ten tabs open still means one connection to the bot.
+**图表不依赖外部图表库。** 图表使用内联 SVG，颜色跟随主题。语言文件在本地加载，不调用翻译接口。
 
-**Two data paths.** Log lines go to the browser live, _and_ through the parser into SQLite (`lib/store.js`). The API keeps a 2,000-line in-memory buffer that dies with the process; the dashboard's point history, run records, activity and schedule survive restarts of both.
+## 面板环境变量
 
-**Live points.** The bot prints its balance and every gain as it earns them, and the API folds those lines into a running tally (`GET /points`). So the Overview shows points climbing _during_ a run, not just the final total. When an account finishes, the live tally is replaced by the authoritative `ACCOUNT-END` numbers.
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `CONTROL_API_URL` | `http://microsoft-rewards-script:3010` | 微软脚本控制接口地址。 |
+| `CONTROL_API_TOKEN` | 无 | 控制接口令牌，与脚本的 `API_TOKEN` 一致。 |
+| `DASHBOARD_USERNAME` | 无 | 可选的面板登录用户名，需与密码同时设置。 |
+| `DASHBOARD_PASSWORD` | 无 | 可选的面板登录密码，缺少任意一项就不启用登录。 |
+| `PORT` | `8890` | 面板监听端口。 |
+| `TZ` | `UTC` | 时区，影响按天汇总积分；国内通常设为 `Asia/Shanghai`。 |
+| `DASHBOARD_TITLE` | `Microsoft Rewards` | 面板标题。 |
+| `POLL_MS` | `5000` | 状态轮询间隔，单位毫秒；日志通过事件流接收。 |
+| `LOG_REPLAY` | `300` | 事件流连接时回放的日志行数。 |
+| `DATA_DIR` | 面板程序目录下的 `data` | 保存 `dashboard.sqlite` 的目录；Docker 镜像中默认为 `/data`。 |
 
-**Separate authentication layers.** `CONTROL_API_TOKEN` is sent only from the dashboard to the Control API as a Bearer token and must match the API's `API_TOKEN`. Browser access uses the optional `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` pair instead.
+## 同步上游与更新
 
-**No dependencies.** Charts are hand-rolled inline SVG (`public/charts.js`) that read their colors from CSS variables, so they follow the theme and work offline. The 14 themes from the original dashboard are untouched.
+在 GitHub 中打开 **Actions → Sync upstream safely → Run workflow**，选择 `main` 分支运行。
 
----
+流程先合并上游、检查语言入口与文案、运行测试并构建镜像，全部成功后再正常推送。遇到合并冲突、测试或构建失败时停止，不强推、不丢弃中文修改。
 
-## Environment
+**不要选择 Discard commits（丢弃提交）**。主 README 已完整中文化，上游修改同一部分文档时也可能出现冲突，需核对后合并，无法保证未来所有更新都零冲突。
 
-| Variable              | Default                                |                                                                                           |
-| --------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `CONTROL_API_URL`     | `http://microsoft-rewards-script:3010` | Where the Control API listens                                                             |
-| `CONTROL_API_TOKEN`   | -                                      | Bearer token sent to the Control API; must match the API's `API_TOKEN`                    |
-| `DASHBOARD_USERNAME`  | -                                      | Optional Basic-auth username; auth is enabled only when username and password are set     |
-| `DASHBOARD_PASSWORD`  | -                                      | Optional Basic-auth password; leave either dashboard credential empty to disable login    |
-| `PORT`                | `8890`                                 |                                                                                           |
-| `TZ`                  | `UTC`                                  | Buckets points into days - set it                                                         |
-| `DASHBOARD_TITLE`     | `Microsoft Rewards`                    | Header title                                                                              |
-| `POLL_MS`             | `5000`                                 | Status poll interval (logs are streamed)                                                  |
-| `LOG_REPLAY`          | `300`                                  | Log lines to replay when the stream connects                                              |
-| `DATA_DIR`            | `./data`                               | Where `dashboard.sqlite` lives - the only folder anything writes to. Docker sets `/data`. |
+同步后，部署端仍需更新源码并重新构建：
 
----
+```sh
+git pull --ff-only origin main
+docker compose -f compose.zh-CN.yaml up -d --build
+```
 
-## Troubleshooting
+以上适用于直接使用本仓库 Compose 的部署；放进其他项目的服务应在对应项目中重建。更多说明见 [中文版维护文档](README.zh-CN.md)。
 
-**"Control API unreachable"** - the dashboard can't open a TCP connection. Check `CONTROL_API_URL`. In Docker, `localhost` means the dashboard's own container: use the API's service name, or `host.docker.internal` with `extra_hosts`.
+## 常见问题
 
-**"Control API rejected our token"** - `CONTROL_API_TOKEN` ≠ `API_TOKEN`.
+**无法连接控制接口**：检查 `CONTROL_API_URL` 和共享网络。容器内的 `localhost` 指向容器自己，接口在另一个容器时通常使用共享网络中的服务名。使用 `host.docker.internal` 时，Linux 主机可能还需配置 `extra_hosts`。
 
-**Browser login prompt does not appear** - both `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` must be non-empty. Authentication is intentionally disabled when either value is empty.
+**控制接口拒绝令牌**：核对面板的 `CONTROL_API_TOKEN` 与脚本的 `API_TOKEN` 是否完全一致。
 
-**Saving config returns 403** - the API was started without `API_ALLOW_CONFIG_WRITE=true`.
+**没有面板登录框**：确认 `DASHBOARD_USERNAME` 和 `DASHBOARD_PASSWORD` 都已传入面板进程，且均不为空。
 
-**Daily bars roll over at the wrong time** - `TZ` isn't set.
+**保存配置返回 403**：检查脚本接口是否开启 `API_ALLOW_CONFIG_WRITE=true`。
 
-**A scheduled run didn't fire** - check the Schedule tab's missed-run policy, excluded accounts, and "Last result".
+**每日积分切换时间不对**：检查 `TZ`，国内通常设置 `Asia/Shanghai`。
 
-## Support
+**定时没执行**：确认由谁负责执行定时，再检查执行端是否在运行、排除账号、补跑策略和上次结果。
 
-If you've found this project helpful and would like to support further development, please consider donating. Thank you:
+**界面没有中文**：确认从本仓库构建，使用上游原版镜像不会包含中文，更新后刷新浏览器。
 
-[![Donate with PayPal](https://img.shields.io/badge/PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=R4QX73RWYB3ZA)
-[![Liberapay](https://img.shields.io/badge/Liberapay-F6C915?logo=liberapay&logoColor=black)](https://liberapay.com/cammarata.m/)
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://www.ko-fi.com/mgrimace)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/cammaratam)
+## 原作者、许可与支持
+
+原项目由 [mgrimace](https://github.com/mgrimace) 维护，本仓库增加简体中文支持，沿用 [MIT 许可](LICENSE)。中文版首版基于上游提交 `4ddb7284d889c9bc4a91146f1e98495506fbc6cf`。本项目不是 Microsoft 官方产品。
+
+以下为**原作者的赞助渠道**，保留自上游说明：
+
+[![通过 PayPal 支持原作者](https://img.shields.io/badge/PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=R4QX73RWYB3ZA)
+[![通过 Liberapay 支持原作者](https://img.shields.io/badge/Liberapay-F6C915?logo=liberapay&logoColor=black)](https://liberapay.com/cammarata.m/)
+[![通过 Ko-fi 支持原作者](https://img.shields.io/badge/Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://www.ko-fi.com/mgrimace)
+[![通过 Buy Me A Coffee 支持原作者](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/cammaratam)
