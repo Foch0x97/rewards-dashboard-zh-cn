@@ -21,6 +21,13 @@ service rate limit|服务请求触发限流
 access rejected|账号访问被拒绝
 service rejected account access|服务拒绝了账号访问
 No data yet.|暂无数据。
+Log display|日志显示
+Chinese explanation|中文说明
+Original logs|原始日志
+Chinese and original|中文与原文
+Download original logs|导出原始日志
+Download bilingual logs|导出双语日志
+Log explanations are generated locally. Unrecognized messages remain unchanged. Original logs are always preserved.|日志在本机按已知句式生成中文说明；未识别的内容保留原文，原始日志始终保留。
 Point total over time|积分余额变化趋势
 🔑 Login approval needed|🔑 需要确认登录
 Syncing…|正在补齐配置…

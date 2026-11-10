@@ -1,4 +1,5 @@
 import * as U from "../util.js";
+import {logSearchText,exportLogText,renderLogEntry} from '../logDisplay.js';
 
 const MAX_LINES = 3000;
 const LEVEL_RANK = { debug: 0, info: 1, warn: 2, error: 3 };
@@ -10,6 +11,9 @@ let pendingWhilePaused = 0;
 let filterLevel = "all";
 let filterText = "";
 let autoscroll = true;
+let displayMode = 'original';
+const DISPLAY_KEY='rewards-dashboard-log-display';
+const chineseUi=()=>globalThis.document?.documentElement?.lang==='zh-CN';
 
 const matches = (e) => {
   if (
@@ -18,26 +22,12 @@ const matches = (e) => {
   )
     return false;
   if (!filterText) return true;
-  const hay =
-    `${e.title || ""} ${e.platform || ""} ${e.accountName || e.user || e.email || e.userName || ""} ${e.message || ""}`.toLowerCase();
+  const hay = logSearchText(e);
   return hay.includes(filterText);
 };
 
 function lineHtml(e) {
-  const timestamp = e.ts || e.receivedAt;
-  const time = timestamp ? U.fmtTime(timestamp) : "";
-  const tag = e.title || e.level;
-  const accountName = e.accountName || e.user || e.email || e.userName || "";
-  const account = accountName
-    ? `<span class="log-account">${U.escapeHtml(accountName)}</span>`
-    : "";
-  return `<div class="log-line log-line--${U.escapeAttr(e.level)}">
-        <span class="log-time">${U.escapeHtml(time)}</span>
-        <span class="log-level log-level--${U.escapeAttr(e.level)}">${U.escapeHtml(e.level)}</span>
-        <span class="log-tag">${U.escapeHtml(tag || "")}</span>
-        ${account}
-        <span class="log-msg">${U.escapeHtml(e.message || e.raw || "")}</span>
-    </div>`;
+  return renderLogEntry(e,displayMode,chineseUi());
 }
 
 function atBottom(box) {
@@ -107,12 +97,12 @@ function addEntry(entry, live) {
   return true;
 }
 
-function download() {
-  const text = entries.map((e) => e.raw || e.message || "").join("\n");
+function download(bilingual=false) {
+  const text = exportLogText(entries,bilingual);
   const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `rewards-log-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
+  a.download = `rewards-log-${bilingual?'bilingual-':''}${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -124,6 +114,8 @@ export default {
 
   mount(root, ctx) {
     rootEl = root;
+    displayMode=chineseUi()?'zh':'original';
+    try { const saved=localStorage.getItem(DISPLAY_KEY);if(['zh','original','both'].includes(saved))displayMode=saved; } catch {}
     root.innerHTML = `
             <section class="panel" aria-labelledby="logs-heading">
                 <div class="panel-head">
@@ -132,6 +124,13 @@ export default {
                 </div>
 
                 <div class="toolbar">
+                    <label class="field field--inline"><span>Log display</span>
+                      <select id="logDisplay" class="input">
+                        <option value="zh">Chinese explanation</option>
+                        <option value="original">Original logs</option>
+                        <option value="both">Chinese and original</option>
+                      </select>
+                    </label>
                     <label class="field field--inline">
                         <span>Level</span>
                         <select id="logLevel" class="input">
@@ -151,15 +150,23 @@ export default {
                     </label>
                     <button type="button" id="logPause" class="btn">Pause</button>
                     <button type="button" id="logMore" class="btn">Load 2000</button>
-                    <button type="button" id="logDownload" class="btn">Download</button>
+                    <button type="button" id="logDownload" class="btn">Download original logs</button>
+                    <button type="button" id="logDownloadBilingual" class="btn">Download bilingual logs</button>
                     <button type="button" id="logClear" class="btn">Clear</button>
                 </div>
 
+                <p class="hint">Log explanations are generated locally. Unrecognized messages remain unchanged. Original logs are always preserved.</p>
                 <div class="log-box" id="logBox" tabindex="0" aria-live="off">
                     <p class="empty-note">Waiting for log lines\u2026</p>
                 </div>
             </section>`;
 
+    const display=U.$('#logDisplay',root);display.value=displayMode;
+    display.addEventListener('change',e=>{
+      displayMode=e.target.value;
+      try{localStorage.setItem(DISPLAY_KEY,displayMode);}catch{}
+      renderAll();
+    });
     U.$("#logLevel", root).addEventListener("change", (e) => {
       filterLevel = e.target.value;
       renderAll();
@@ -192,7 +199,8 @@ export default {
       pendingWhilePaused = 0;
       renderAll();
     });
-    U.$("#logDownload", root).addEventListener("click", download);
+    U.$("#logDownload", root).addEventListener("click", () => download(false));
+    U.$("#logDownloadBilingual", root).addEventListener("click", () => download(true));
     U.$("#logMore", root).addEventListener("click", async () => {
       try {
         const res = await ctx.api.logs(2000);

@@ -2135,6 +2135,27 @@ tbody tr:hover {
   color: var(--text);
 }
 
+.log-original-details {
+  margin-top: var(--space-4);
+  white-space: normal;
+  color: var(--text-muted);
+}
+.log-original-details summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.log-original {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-8);
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 16rem;
+  overflow: auto;
+  border-left: var(--border-width) solid var(--border);
+  color: var(--text-muted);
+}
+
 
 /* Runs */
 
