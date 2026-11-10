@@ -17,7 +17,7 @@
 - **日志中文说明**：日志页可切换中文说明、原始日志、中文与原文；覆盖 v5 登录、二次验证、搜索和任务结果等常见句式。搜索同时匹配中英文，中文说明下可展开原文，支持原始和双语导出。
 - **保留技术信息原文**：后台原始日志、配置 JSON、参数名、命令和用户输入保持原样，便于查错。
 - **独立语言文件**：中文文案集中在 `rewards-dashboard/public/locales/`，原始日志与业务响应保留原文。
-- **执行结果通知**：在独立区域按需启用企业微信机器人、钉钉、Telegram、Server 酱 Turbo，分别配置、测试和查看发送状态；支持中英文通知，独立于原脚本的日志推送。
+- **执行结果通知**：提供 10 个常用渠道，分别勾选、配置、测试和查看发送状态：企业微信、钉钉、Telegram、Server 酱 Turbo、飞书、PushPlus、Bark、Gotify、Discord、ntfy。支持中英文通知，独立于原脚本的日志推送。
 - **检查与上游同步**：增加文案检查、自动测试和手动同步工作流，通过检查后再更新分支。
 
 没有使用在线翻译服务。上游新增而尚未收录的文案会保留英文，未知接口错误也保留原文。
@@ -32,6 +32,12 @@
 | 钉钉 | 自定义机器人原始 Webhook | 支持 SEC 加签密钥和安全关键词；时间戳及签名由面板生成。[官方文档](https://open.dingtalk.com/document/robots/custom-robot-access) |
 | Telegram | Bot Token、Chat ID | 先与机器人开始会话，或将其加入目标群组。面板需要能访问 Telegram 官方接口。[官方文档](https://core.telegram.org/bots/api#sendmessage) |
 | Server 酱 Turbo | SCT 开头的 SendKey | 暂不支持 Server 酱 3 的密钥。[获取 SendKey](https://sct.ftqq.com/sendkey/) |
+| 飞书 / Lark | 自定义机器人 Webhook | 支持签名密钥和安全关键词。[官方文档](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot) |
+| PushPlus 推送加 | 用户令牌或消息令牌 | 可填群组编码，留空发给自己。[官方文档](https://www.pushplus.plus/doc/guide/api.html) |
+| Bark | 设备密钥 | 默认 `https://api.day.app`，可配置自建服务器。[官方文档](https://bark.day.app/#/tutorial) |
+| Gotify | 服务器地址、应用令牌 | 支持反向代理子路径，优先级可选 0–10，默认 5。[官方文档](https://gotify.net/docs/pushmsg) |
+| Discord | 文字频道 Webhook | 等待服务端确认，关闭自动提及；与脚本日志通知独立。[官方文档](https://docs.discord.com/developers/resources/webhook#execute-webhook) |
+| ntfy | 通知主题 | 默认 `https://ntfy.sh`，可填自建服务器及访问令牌，优先级可选 1–5，默认 3。[官方文档](https://docs.ntfy.sh/publish/) |
 
 选择「通知内容语言」，点击「保存结果通知设置」，再分别点击各渠道的「发送测试通知」。中英文界面、说明、保存状态及已知错误均已适配；通知内容语言单独保存，不因切换界面而改变。
 
@@ -42,6 +48,8 @@
 凭据、语言和发送记录保存在面板 `/data/result-notifications.json`，沿用面板的数据挂载；浏览器读取设置不会返回已保存的凭据。留空保存会保留旧值；「清除此渠道已保存的凭据并停用」只影响该渠道。如需移除已保存的钉钉选填项，请先清除此渠道，再重新填写。不要把配置文件上传到公开仓库。
 
 更新时自动迁移旧版 `/data/wecom.json` 中的企微地址、启用状态与去重记录，原文件保留；后续统一以新配置为准。更新后只需重建面板，无需重新配置微软账号。
+
+从四渠道版本更新时会自动补齐六个新渠道，默认不启用，不清空已有设置。Bark、Gotify、ntfy 可以填写自建 HTTP 或 HTTPS 服务根地址，支持反向代理子路径；不要把设备密钥、主题或令牌拼进服务器地址，使用各自字段。
 
 面板需要在运行结束时保持在线。每轮对各个启用渠道分别发送一次，某渠道失败不妨碍其他渠道。启用前及面板重启前结束的历史运行不会补发，日志重放不会重复推送；发送失败会显示在设置中，**不会自动重发**，以免接口已收取但响应超时时刷屏。测试消息和实际执行结果会明确区分。面板离线、网络故障或未收到脚本结束记录时，不能保证收到通知。测试检查了协议请求和模拟响应；真实送达请使用各渠道测试按钮确认。
 

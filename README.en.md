@@ -1,6 +1,6 @@
 # Rewards Dashboard
 
-> This fork adds a Simplified Chinese / English interface, display-only Chinese log explanations, and a dashboard-owned **Execution result notifications** section. Select WeCom group bot, DingTalk, Telegram, and/or ServerChan Turbo; each has its own configuration, test button, and delivery status. Result summaries are separate from the bot's original per-log Discord / Telegram / ntfy notifications. The upstream documentation follows below.
+> This fork adds a Simplified Chinese / English interface, display-only Chinese log explanations, and a dashboard-owned **Execution result notifications** section with 10 optional channels: WeCom, DingTalk, Telegram, ServerChan Turbo, Feishu / Lark, PushPlus, Bark, Gotify, Discord, and ntfy. Each has its own configuration, test button, and delivery status. Result summaries are separate from the bot's original per-log Discord / Telegram / ntfy notifications. The upstream documentation follows below.
 
 ## Fork: execution result notifications
 
@@ -10,6 +10,14 @@ Open **Config → Execution result notifications**, select the channels you need
 - **DingTalk:** official custom bot webhook; optional SEC signing secret and security keyword. Timestamp and signature are generated automatically.
 - **Telegram:** bot token and chat ID. Start a conversation or add the bot to the destination group first. The dashboard must be able to reach the official Telegram API.
 - **ServerChan Turbo:** SCT-prefixed SendKey. ServerChan 3 keys are not supported in this version.
+- **Feishu / Lark:** custom bot webhook, with optional signing secret and security keyword.
+- **PushPlus:** user/message token, with an optional group code.
+- **Bark:** device key, with optional self-hosted server URL; defaults to `https://api.day.app`.
+- **Gotify:** server URL and application token, optional priority 0–10 (default 5).
+- **Discord:** text-channel webhook. Requests wait for confirmation and disable automatic mentions.
+- **ntfy:** topic, optional server URL/access token/priority 1–5 (default 3). Defaults to `https://ntfy.sh`.
+
+Bark, Gotify and ntfy support administrator-selected self-hosted HTTP/HTTPS base URLs, including reverse proxy prefixes. Keep topics, device keys and tokens in their dedicated fields. Updating from the four-channel version preserves existing credentials and delivery history; newly added channels are disabled by default.
 
 Each enabled channel receives one summary after a run ends, including outcome, processed accounts, points change and duration. A provider failure does not block the other channels. Failed deliveries are recorded without automatic retries; historical results are not replayed after restart or enabling a channel. The dashboard service must remain running. Test acceptance by a provider is not proof of delivery to a user's device.
 

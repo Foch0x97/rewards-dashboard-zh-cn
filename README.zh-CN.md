@@ -7,7 +7,7 @@
 - 右上角新增「语言」选项，可切换简体中文和 English，首次访问默认中文。语言偏好保存在当前浏览器中。
 - 人工按实际操作含义编写中文，覆盖总览、账号、运行记录、日志工具栏、定时计划、配置、诊断和常见提示。例如区分「已上报积分」与「尚未确认」，不把估算结果写成已完成。
 - 中文集中在 `rewards-dashboard/public/locales/`，页面通过独立入口加载语言包，尽量减少与上游的冲突。
-- 本 fork 额外提供独立的「执行结果通知」：支持企业微信机器人、钉钉、Telegram、Server 酱 Turbo，多渠道可选，中英文界面与通知内容语言分别设置。后端为 `lib/resultNotifications.js`，前端为 `public/views/resultNotificationSettings.js`；`server.js` 接入独立设置接口和完成记录检查，`views/config.js` 接入表单。不会向原脚本写入不支持的配置项。
+- 本 fork 额外提供独立的「执行结果通知」：支持企业微信机器人、钉钉、Telegram、Server 酱 Turbo、飞书、PushPlus、Bark、Gotify、Discord、ntfy 共 10 个可选渠道，中英文界面与通知内容语言分别设置。后端为 `lib/resultNotifications.js`，前端为 `public/views/resultNotificationSettings.js`；`server.js` 接入独立设置接口和完成记录检查，`views/config.js` 接入表单。不会向原脚本写入不支持的配置项。
 - 原始日志、配置 JSON、配置键、命令、账号标识和用户输入保留原文；没有使用在线翻译服务，也不会把账号数据发送到翻译接口。
 - 日志页新增中文说明、原始日志、中文与原文三种显示方式。中文说明下可展开原文；搜索匹配中英文，导出可选原始或双语。显示偏好保存在当前浏览器。
 - 增加中文检查与手动上游同步工作流。上游新增而尚未收录的文案保留英文，不猜译接口响应。

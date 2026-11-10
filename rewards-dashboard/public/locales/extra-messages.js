@@ -1,5 +1,46 @@
 // 补齐后端活动名称、已知错误和容易被组合文案漏掉的状态。
 export const extraMessages = Object.fromEntries(`
+Feishu / Lark|飞书 / Lark
+PushPlus|PushPlus 推送加
+Feishu bot webhook URL|飞书机器人 Webhook 地址
+Use a Feishu or Lark custom bot webhook.|填写飞书或 Lark 自定义机器人的 Webhook。
+Feishu signing secret (optional)|飞书签名密钥（选填）
+Fill this in if signature verification is enabled for the bot.|机器人启用了签名校验时填写。
+Feishu keyword (optional)|飞书关键词（选填）
+The keyword is included in test and result messages if provided.|填写后会在测试通知和结果通知中加入该关键词。
+PushPlus token|PushPlus 推送令牌
+Copy your user token or message token from PushPlus.|填写 PushPlus 的用户令牌或消息令牌。
+PushPlus group code (optional)|PushPlus 群组编码（选填）
+Leave blank to send to yourself; fill in the group code for group delivery.|留空发送给自己，填写群组编码则推送到对应群组。
+Bark device key|Bark 设备密钥
+Copy the device key from the Bark app, without the server URL.|填写 Bark 应用里的设备密钥，不包含服务器地址。
+Bark server URL (optional)|Bark 服务器地址（选填）
+Defaults to https://api.day.app. You may use your self-hosted HTTP or HTTPS base URL.|默认使用 https://api.day.app，也可填写自建服务的 HTTP 或 HTTPS 根地址。
+Gotify server URL|Gotify 服务器地址
+Use the HTTP or HTTPS base URL, including a reverse proxy path if needed.|填写 HTTP 或 HTTPS 服务根地址；使用反向代理子路径时一并填写。
+Gotify application token|Gotify 应用令牌
+Create an application in Gotify and copy its application token, not a client token.|在 Gotify 中创建应用，填写应用令牌，不是客户端令牌。
+Gotify priority (optional)|Gotify 优先级（选填）
+Priority 0–10. Defaults to 5.|范围 0–10，默认 5。
+Discord result webhook URL|Discord 结果通知 Webhook
+Create a webhook in the destination text channel. This sends result summaries independently of bot log notifications.|在目标文字频道中创建 Webhook。这里发送结果汇总，与脚本的日志通知独立。
+ntfy result topic|ntfy 结果通知主题
+Subscribe to this topic in ntfy to receive result notifications.|在 ntfy 中订阅此主题，即可接收结果通知。
+ntfy server URL (optional)|ntfy 服务器地址（选填）
+Defaults to https://ntfy.sh. Use a server base URL, not a topic URL.|默认使用 https://ntfy.sh。请填写服务器根地址，不要包含主题路径。
+ntfy access token (optional)|ntfy 访问令牌（选填）
+Fill this in if publishing to your topic requires an access token.|向此主题发送消息需要访问令牌时填写。
+ntfy priority (optional)|ntfy 优先级（选填）
+Priority 1–5. Defaults to 3.|范围 1–5，默认 3。
+Enter a valid HTTP or HTTPS notification server URL.|请填写有效的 HTTP 或 HTTPS 通知服务器地址。
+Use a server base URL without credentials, query parameters or fragments.|请填写服务根地址，不要包含账号密码、查询参数或锚点。
+Enter a valid Feishu signing secret.|请填写有效的飞书签名密钥。
+Use a single-line bot keyword of up to 80 characters.|机器人关键词不能换行，且不能超过 80 个字符。
+Enter a valid notification access token.|请填写有效的通知访问令牌。
+Enter a valid Bark device key.|请填写有效的 Bark 设备密钥。
+Use an ntfy topic with 1 to 64 letters, numbers, underscores or hyphens.|ntfy 主题长度应为 1–64 位，只能使用字母、数字、下划线或连字符。
+Use a PushPlus group code of up to 100 characters.|PushPlus 群组编码不能换行，且不能超过 100 个字符。
+Use priority 1–5 for ntfy or 0–10 for Gotify.|ntfy 优先级范围为 1–5，Gotify 为 0–10。
 Execution result notifications|执行结果通知
 Send one summary to each enabled channel after a run ends: outcome, accounts, points and duration. These settings are independent of the bot's log notifications.|每轮结束后，向各个已启用的渠道发送一条汇总，包含状态、账号、积分和耗时。此处设置独立于脚本的日志通知。
 The dashboard service must stay running. Historical results are not resent after restart; failed deliveries are shown here without automatic retries.|面板服务需保持运行。重启后不补发历史结果；发送失败会显示在这里，不会自动重试。
