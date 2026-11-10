@@ -8,7 +8,7 @@ export function language(storage) {
 
 // 原始日志、JSON、用户输入、令牌和技术标识不参与汉化。
 export const EXCLUDE = 'script,style,pre,code,textarea,[contenteditable],.log-line,.tag-chip-text,.login-code-name,.login-code-number,.acc-email,.hero-acc-name,[data-no-translate]';
-const ATTRIBUTES = ['title', 'aria-label', 'placeholder'];
+const ATTRIBUTES = ['title', 'aria-label', 'placeholder', 'alt'];
 
 export function localize(root) {
   if (!root || root.nodeType === 3 && root.parentElement?.closest(EXCLUDE)) return;
@@ -23,7 +23,7 @@ export function localize(root) {
   if (root.nodeType === 3) { visit(root); return; }
   const walker = doc.createTreeWalker(root, 4);
   while (walker.nextNode()) visit(walker.currentNode);
-  const elements = [...(root.nodeType === 1 ? [root] : []), ...(root.querySelectorAll?.('[title],[aria-label],[placeholder]') || [])];
+  const elements = [...(root.nodeType === 1 ? [root] : []), ...(root.querySelectorAll?.('[title],[aria-label],[placeholder],[alt]') || [])];
   for (const element of elements) {
     if (element.closest(EXCLUDE)) continue;
     for (const attribute of ATTRIBUTES) {
@@ -37,6 +37,7 @@ export function localize(root) {
 function start() {
   const selected = language();
   document.documentElement.lang = selected;
+  if (selected === 'zh-CN') document.querySelector('link[rel="manifest"]')?.setAttribute('href','/manifest.zh-CN.json');
   const label = document.createElement('label');
   label.className = 'locale-picker';
   label.dataset.noTranslate = '';

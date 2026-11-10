@@ -1,0 +1,14 @@
+{
+  "lang": "zh-CN",
+  "name": "Microsoft Rewards 管理面板",
+  "short_name": "Rewards 管理面板",
+  "description": "查看微软 Rewards 账号、积分、运行记录和任务进度的管理面板。",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {"src":"/icon.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"/icon.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}

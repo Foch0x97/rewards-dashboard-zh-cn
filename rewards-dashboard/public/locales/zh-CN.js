@@ -1,4 +1,6 @@
 // 人工校订的界面文案。只用于显示，不改变 API 字段、配置值或原始日志。
+import {extraMessages} from './extra-messages.js';
+import {translateDynamic} from './dynamic-zh-CN.js';
 const copy = `
 No accounts configured or observed yet.|尚未配置账号，也未读取到账号运行记录。
 Loading accounts configuration details…|正在读取账号配置详情…
@@ -619,10 +621,10 @@ Show setting description|查看设置说明
 Hide setting description|收起设置说明
 `;
 
-export const messages = Object.freeze(Object.fromEntries(copy.trim().split('\n').map(line => {
+export const messages = Object.freeze({...Object.fromEntries(copy.trim().split('\n').map(line => {
   const separator = line.indexOf('|');
   return [line.slice(0, separator), line.slice(separator + 1)];
-})));
+})), ...extraMessages});
 
 // 动态文案也按句意编写；不改写未知业务响应，不做逐词替换。
 const patterns = [
@@ -640,7 +642,7 @@ const patterns = [
   [/^Some points were not reported \(about (.+) more estimated from balance changes\)$/, (_, n) => `部分积分未上报，按余额变化估算另有约 ${n} 分`],
   [/^Collected differs from attributed \+ unattributed by (.+)\.$/, (_, n) => `获取积分与各项归属积分之和相差 ${n} 分。`],
   [/^Resets in (.+?)( \(estimated\))?$/, (_, time, est) => `${translate(time)}后重置${est ? '（估算）' : ''}`],
-  [/^Reason: (.+)\. Retrying automatically\.$/, (_, reason) => `原因：${reason}。正在自动重试。`],
+  [/^Reason: (.+)\. Retrying automatically\.$/, (_, reason) => `原因：${translate(reason)}。正在自动重试。`],
   [/^Account not run: (.+)$/, (_, why) => `账号未运行：${translate(why)}`],
   [/^Started ACCOUNT_(\d+) only \((.+)\)\.$/, (_, n, email) => `已提交账号 ${n}（${email}）的运行请求。`],
   [/^\+(\d[\d,]*)\s*pts today$/, (_, n) => `今日变化 +${n} 分`],
@@ -649,7 +651,7 @@ const patterns = [
   [/^([+\-]?[\d,]+) points over (\d+) days$/, (_, n, days) => `最近 ${days} 天共 ${n} 分`],
   [/^(\d+) days? with a run$/, (_, n) => `${n} 天有运行记录`],
   [/^(\d+) days?$/, (_, n) => `${n} 天`],
-  [/^Failed: (.+)$/, (_, reason) => `失败：${reason}`],
+  [/^Failed: (.+)$/, (_, reason) => `失败：${translate(reason)}`],
   [/^Not valid JSON: (.+)$/, (_, reason) => `JSON 格式错误：${reason}`],
   [/^Saved: (.+)$/, (_, what) => `已保存：${what}`],
   [/^(\d+) lines? buffered$/, (_, n) => `已缓存 ${n} 条日志`],
@@ -696,16 +698,23 @@ const patterns = [
 export function translate(value) {
   if (typeof value !== 'string') return value;
   const key = value.trim().replace(/\s+/g, ' ');
-  const exact = messages[key];
-  if (exact !== undefined) return value.replace(value.trim(), exact);
+  const exact = Object.hasOwn(messages, key) ? messages[key] : undefined;
+  if (exact !== undefined) return value.replace(value.trim(), () => exact);
+  // 先分开多张任务卡，避免后一张卡的冒号被误认为前一张卡标题的一部分。
+  if (/; .+?: \d+\/\d+/.test(key)) {
+    const result = key.split('; ').map(part => translate(part)).join('；');
+    if (result !== key) return value.replace(value.trim(), () => result);
+  }
+  const dynamic = translateDynamic(key, translate);
+  if (dynamic !== null) return value.replace(value.trim(), () => dynamic);
   for (const [pattern, render] of patterns) {
     const match = key.match(pattern);
-    if (match) return value.replace(value.trim(), render(...match));
+    if (match) return value.replace(value.trim(), () => render(...match));
   }
   // 进度条的复合文案由分隔符连接，逐段匹配完整句式。
   if (key.includes(' · ')) {
     const result = key.split(' · ').map(part => translate(part)).join(' · ');
-    if (result !== key) return value.replace(value.trim(), result);
+    if (result !== key) return value.replace(value.trim(), () => result);
   }
   return value;
 }

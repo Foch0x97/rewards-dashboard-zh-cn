@@ -1,10 +1,11 @@
-const CACHE_NAME = 'rewards-dashboard-pwa-v6'
+const CACHE_NAME = 'rewards-dashboard-pwa-v7-zh'
 const ASSETS = [
   '/',
   '/index.html',
   '/style.css',
   '/app.js',
   '/manifest.json',
+  '/manifest.zh-CN.json',
   '/icon.png',
   'https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js'

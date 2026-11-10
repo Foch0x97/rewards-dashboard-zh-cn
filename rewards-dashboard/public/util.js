@@ -28,6 +28,9 @@ export function el(tag, attrs = {}, html = "") {
 // fomrat
 
 const DASH = "\u2013";
+export function uiLocale() {
+  return globalThis.document?.documentElement?.lang === 'zh-CN' ? 'zh-CN' : undefined;
+}
 
 export function fmtNumber(n) {
   if (n == null || Number.isNaN(n)) return DASH;
@@ -43,7 +46,8 @@ export function fmtDateTime(iso) {
   if (!iso) return DASH;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return DASH;
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString(uiLocale(), {
+    timeZone: timeZone || undefined,
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -55,6 +59,10 @@ export function fmtTime(iso) {
   if (!iso) return DASH;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return DASH;
+  if (uiLocale() === 'zh-CN') return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: timeZone || undefined, year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false,
+  }).format(d);
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: timeZone || undefined,
     year: "numeric",
@@ -161,7 +169,7 @@ export function isoWeekStartKey(year, month, day) {
 
 export function localDateLabel(key, options) {
   const [y, m, d] = key.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, options);
+  return new Date(y, m - 1, d).toLocaleDateString(uiLocale(), options);
 }
 
 // Buckets history rows by day, using the TRUE point movement detected

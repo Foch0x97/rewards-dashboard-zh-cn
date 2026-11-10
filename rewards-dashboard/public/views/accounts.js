@@ -187,9 +187,9 @@ function detailGroups(a, protection) {
       ["Configured in .env", a.configured ? "Yes" : "No \u2014 seen in logs only"],
       ...(a.geoLocale ? [["Geo locale", a.geoLocale]] : []),
       ...(a.langCode ? [["Language", a.langCode]] : []),
-      ...(a.hasTotp != null ? [["TOTP secret", a.hasTotp ? "Set" : "Not set"]] : []),
+      ...(a.hasTotp != null ? [["TOTP secret", a.hasTotp ? "Configured" : "Not set"]] : []),
       ...(a.hasRecoveryEmail != null
-        ? [["Recovery email", a.hasRecoveryEmail ? "Set" : "Not set"]]
+        ? [["Recovery email", a.hasRecoveryEmail ? "Configured" : "Not set"]]
         : []),
       [
         "Proxy",

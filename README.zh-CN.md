@@ -57,6 +57,10 @@ node --test tests/*.test.mjs
 
 修改文案时编辑 `rewards-dashboard/public/locales/zh-CN.js`。动态句子使用完整句式匹配，不做全局单词替换。新配置项缺少翻译时，检查会提示补齐。
 
+动态句式集中在 `locales/dynamic-zh-CN.js`，后端内置名称和已知提示补充在 `locales/extra-messages.js`。中文日期由 `public/util.js` 按所选语言生成；中文桌面安装信息使用独立的 `manifest.zh-CN.json`，英文清单保留。
+
+`tests/locales-complete.test.mjs` 会核对完整动态句子、后端活动分类、Cron 描述、确认弹窗，以及实际生成的图表和活动详情。原始活动标题、参数、邮箱、路径、未知外部错误不做猜译。更新上游后，仍需检查新增句式，不能仅凭构建通过认定新页面已全部翻译。
+
 ## 原作者与许可
 
 原项目：[mgrimace/rewards-dashboard](https://github.com/mgrimace/rewards-dashboard)。本仓库是增加中文语言的 fork，沿用 [原项目 LICENSE](LICENSE)。
