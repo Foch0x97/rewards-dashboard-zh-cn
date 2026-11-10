@@ -1,8 +1,8 @@
 import { translate } from './zh-CN.js';
 
 const STORAGE_KEY = 'rewards-dashboard-language';
-export function language(storage = globalThis.localStorage) {
-  try { return storage.getItem(STORAGE_KEY) === 'en' ? 'en' : 'zh-CN'; }
+export function language(storage) {
+  try { return (storage || globalThis.localStorage).getItem(STORAGE_KEY) === 'en' ? 'en' : 'zh-CN'; }
   catch { return 'zh-CN'; }
 }
 

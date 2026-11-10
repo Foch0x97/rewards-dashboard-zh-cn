@@ -1,5 +1,26 @@
 // 人工校订的界面文案。只用于显示，不改变 API 字段、配置值或原始日志。
 const copy = `
+No accounts configured or observed yet.|尚未配置账号，也未读取到账号运行记录。
+Loading accounts configuration details…|正在读取账号配置详情…
+Cancel delete|取消删除
+Confirm delete account|确认删除账号
+Permanently remove this account and its history from the dashboard|从面板永久移除此账号及其历史记录
+The account must be idle to delete it|请先停止该账号的运行，再删除。
+Syncing run history…|正在同步运行记录…
+In progress|进行中
+Mobile searches|手机搜索
+Configuration Options|配置选项
+Hidden — use Reveal secrets above to edit|内容已隐藏；如需编辑，请先开启上方“显示敏感信息”。
+Already up to date.|已是最新配置。
+Config update available|有新的配置项可补充
+Sync now|立即补齐
+Adds the missing fields with their defaults. Your existing values are never changed.|为缺少的配置项填入默认值，保留现有配置值。
+No configured accounts found.|未找到已配置的账号。
+Point total —|总积分 —
+Change in points since last check-in from all sources|自上次记录以来，所有来源的积分变化
+Last run duration|上次运行耗时
+The control API hasn’t recorded any runs yet. Runs it launches itself (manually or on a schedule) show up here.|控制接口尚未记录运行。通过控制接口手动或定时启动的运行会显示在这里。
+Daily Set / More Promos split · per-activity status · mobile search quota · search perk · balance estimates|每日任务与更多活动分开统计 · 各活动状态 · 手机搜索额度 · 搜索加成 · 余额估算
 Overview|总览
 Accounts|账号
 Logs|日志
@@ -47,7 +68,6 @@ Sleeping|等待启动
 Unknown|未知
 Unverified|尚未确认
 Reported|已上报积分
-Not offered|账号未提供此活动
 Attention|需要检查
 N/A|不适用
 On|开启
@@ -105,13 +125,11 @@ Every recorded balance, oldest to newest|按时间展示每次记录的积分余
 No point history recorded for this account yet.|此账号还没有积分历史记录。
 Configuration|账号配置
 Configured in .env|已在 .env 中配置
-No — seen in logs only|否，仅在历史日志中出现
 Geo locale|账号地区
 Language|语言
 TOTP secret|动态验证码密钥
 Recovery email|备用邮箱
 Proxy|代理
-Streak protection|连续签到保护
 Current streak|当前连续签到天数
 Streak|连续签到
 Protection days left|剩余保护天数
@@ -124,7 +142,6 @@ unconfigured|未配置
 days unavailable|未取得剩余天数
 streak unavailable|未取得连续签到天数
 Live logs|实时日志
-Level|日志级别
 All|全部
 Info and up|信息及以上
 Warnings and up|警告及以上
@@ -377,37 +394,8 @@ Sync defaults|补齐默认配置
 Up to date|已是最新
 Configuration is up to date.|配置项已齐全。
 The bot rejected this config:|脚本拒绝了这份配置：
-Confirmed|已确认
-Not offered on this account|该账号未提供此活动
-Probably not offered (no streak for this account)|可能未提供此活动：账号没有相应连续任务
-Listed by Microsoft, but there is no card for it on the page|微软任务列表中存在，但页面上没有对应卡片
-Not applicable|不适用
-Quota couldn’t be read|未能读取任务额度
-Offer data couldn’t be read|未能读取活动数据
-Completion not confirmed|尚未确认完成
-Claim not confirmed|尚未确认领取成功
-Claimable bonus unknown|可领取的额外奖励尚不明确
-No progress detected|未检测到进度变化
-Couldn’t confirm|未能确认
-Script couldn’t pick the right button|脚本未能确定应点击哪个按钮
-Control not found on the page|页面上没有找到对应控件
-Search attempt limit reached|已达到搜索尝试上限
-Earn page pass didn’t finish|奖励页面处理未完成
-Step not completed yet|此步骤尚未完成
 Failed|失败
-Points breakdown|积分明细
-Activity|活动
-Detail|说明
-Streaks & progress|连续任务与进度
-points not reported|脚本未上报积分
-Some points in this group were not reported by the script|此组部分积分未由脚本明确上报。
-The script did not report points for this activity|脚本没有上报此活动的积分。
-Estimated from the balance change around this activity. Not verified by the script and not counted in any total.|按活动前后的余额变化估算，脚本尚未核实，不计入汇总。
 Collected|本轮获取
-Attributed|已归属到活动
-Unattributed|尚未归属
-Balance|积分余额
-Day|日期
 Today|今天
 Previous day|前一天
 Next day|后一天

@@ -38,3 +38,8 @@ test('原始日志、配置编辑器及敏感信息节点不参与翻译',()=>{
   for(const selector of ['.log-line','textarea','code','.login-code-name','.login-code-number','.tag-chip-text']) assert.ok(EXCLUDE.includes(selector));
   for(const value of Object.values(messages)) assert.ok(value && value!=='undefined');
 });
+test('补齐删除账号、配置同步及常见运行提示',()=>{
+  for (const text of ['Cancel delete','Confirm delete account','The account must be idle to delete it','Syncing run history…','In progress','Mobile searches','Configuration Options','Sync now','Already up to date.','Last run duration']) {
+    assert.notEqual(translate(text),text);
+  }
+});

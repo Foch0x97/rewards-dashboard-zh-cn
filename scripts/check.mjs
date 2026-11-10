@@ -21,3 +21,8 @@ if (html.split('/locales/bootstrap.js').length !== 2 || html.indexOf('/locales/b
   throw Error('中文语言包必须在 app.js 之前接入，且只能接入一次。');
 }
 console.log(`语法及入口检查通过：${files.length} 个文件。`);
+const server = readFileSync(resolve(root,'rewards-dashboard/server.js'),'utf8');
+const config = readFileSync(resolve(root,'rewards-dashboard/public/views/config.js'),'utf8');
+if (!server.includes('wecom.scan(') || !server.includes('/api/notifications/wecom') || !config.includes('mountWecom(root)')) {
+  throw Error('企业微信扩展入口缺失，请先适配上游再同步。');
+}

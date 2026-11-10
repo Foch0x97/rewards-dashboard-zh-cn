@@ -17,6 +17,7 @@ const { generateIndexModule, THEMES_DIR } = require("./lib/themeLoader");
 const { PendingLoginCodes } = require("./lib/pendingLoginCodes");
 const { mergeAccounts } = require("./lib/accounts");
 const { ActivityStore } = require("./lib/activityStore");
+const { WeCom } = require("./lib/wecom");
 
 // confg
 const PORT = Number(process.env.PORT || 8890);
@@ -39,6 +40,12 @@ const client = new ControlApiClient({
   token: CONTROL_API_TOKEN,
 });
 const store = new Store();
+const wecom = new WeCom({dir: process.env.DATA_DIR || path.join(__dirname, "data"), title: DISPLAY_NAME});
+// Independent of browser tabs and the bot's per-log notification channels.
+setInterval(() => {
+  wecom.scan(store.snapshotRuns(100), store.snapshotAccounts())
+    .catch(() => console.warn("[server] 企业微信结果通知状态保存失败，请检查数据目录权限。"));
+}, 2000).unref();
 const pendingLoginCodes = new PendingLoginCodes();
 
 const log = (level, msg) => {
@@ -514,6 +521,21 @@ const DIAG_FILES = new Set(["screenshot.png", "error.txt", "dump.html"]);
 async function handleApi(req, res, url) {
   const { pathname, searchParams } = url;
   const method = req.method || "GET";
+
+  if (pathname === "/api/notifications/wecom" || pathname === "/api/notifications/wecom/test") {
+    if (method === "GET" && pathname.endsWith("/wecom")) return sendJson(res, 200, wecom.publicConfig());
+    if (method === "PUT" || method === "POST") {
+      if (!String(req.headers["content-type"] || "").startsWith("application/json")) return sendJson(res, 415, {error:"请使用 JSON 请求。"});
+      const origin = req.headers.origin;
+      if (origin && new URL(origin).host !== req.headers.host) return sendJson(res, 403, {error:"不允许跨站修改通知配置。"});
+      try {
+        const body = await readJsonBody(req);
+        if (method === "PUT" && pathname.endsWith("/wecom")) return sendJson(res, 200, wecom.configure(body));
+        if (method === "POST" && pathname.endsWith("/test")) return sendJson(res, 200, await wecom.test());
+      } catch (e) { return sendJson(res, 400, {error:e.message}); }
+    }
+    return sendJson(res, 405, {error:"不支持的请求方式。"});
+  }
 
   // live
   if (pathname === "/api/events" && method === "GET") {
