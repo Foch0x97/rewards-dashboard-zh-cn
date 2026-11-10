@@ -3,6 +3,7 @@ const outcomes = {completed:'已完成',partial:'部分任务未完成',failed:'
 const time24 = text => text.replace(/(\d{1,2}):(\d{2}) (AM|PM)/g, (_, h, m, p) => `${String(Number(h) % 12 + (p === 'PM' ? 12 : 0)).padStart(2,'0')}:${m}`).replace(/,? and /g, '、');
 const weekdays = text => text.replace(/Sun|Mon|Tue|Wed|Thu|Fri|Sat/g, d => ({Sun:'周日',Mon:'周一',Tue:'周二',Wed:'周三',Thu:'周四',Fri:'周五',Sat:'周六'})[d]);
 const rules = [
+  [/^Notification rejected \(HTTP (\d+), code (\d+|unknown)\)\.$/, (_, http, code) => `通知被服务商拒绝（HTTP ${http}，错误码 ${code==='unknown'?'未知':code}）。`],
   [/^(Login approval needed for .+?: select number \d+\. Expires in 60 seconds\.) (Login approval needed for .+)$/, (_, first, rest, t) => `${t(first)} ${t(rest)}`],
   [/^Microsoft Rewards Dashboard:(.+)$/, (_, v) => `Microsoft Rewards 管理面板：${v === 'Development' ? '开发版' : v}`],
   [/^pid (\d+)$/, (_, n) => `进程号 ${n}`],

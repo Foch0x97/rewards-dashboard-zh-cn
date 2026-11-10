@@ -1,5 +1,22 @@
 # Rewards Dashboard
 
+> This fork adds a Simplified Chinese / English interface, display-only Chinese log explanations, and a dashboard-owned **Execution result notifications** section. Select WeCom group bot, DingTalk, Telegram, and/or ServerChan Turbo; each has its own configuration, test button, and delivery status. Result summaries are separate from the bot's original per-log Discord / Telegram / ntfy notifications. The upstream documentation follows below.
+
+## Fork: execution result notifications
+
+Open **Config → Execution result notifications**, select the channels you need, fill in their credentials, choose the notification language, and save before testing. The form, help text and known errors support English and Simplified Chinese. The message language is a separate setting, not tied to the current browser's interface language.
+
+- **WeCom group bot:** official group bot webhook, not an enterprise application secret.
+- **DingTalk:** official custom bot webhook; optional SEC signing secret and security keyword. Timestamp and signature are generated automatically.
+- **Telegram:** bot token and chat ID. Start a conversation or add the bot to the destination group first. The dashboard must be able to reach the official Telegram API.
+- **ServerChan Turbo:** SCT-prefixed SendKey. ServerChan 3 keys are not supported in this version.
+
+Each enabled channel receives one summary after a run ends, including outcome, processed accounts, points change and duration. A provider failure does not block the other channels. Failed deliveries are recorded without automatic retries; historical results are not replayed after restart or enabling a channel. The dashboard service must remain running. Test acceptance by a provider is not proof of delivery to a user's device.
+
+Settings are stored in `/data/result-notifications.json` independently of the bot's `config.json`. Saved credentials are not returned to the browser; blank fields preserve them. Clear a channel to remove its credentials and disable it. Existing `/data/wecom.json` settings and deduplication history are migrated once without modifying the original file. Keep both files private. Rebuild only the dashboard to update this feature; no bot session reset is required.
+
+Protocol tests use mock responses; use each channel's test button to verify your real credentials and destination.
+
 A companion dashboard for [microsoft-rewards-script](https://github.com/thenetsky/microsoft-rewards-script), driven entirely over HTTP by the bot's [Control API](https://github.com/thenetsky/microsoft-rewards-script/tree/v4/scripts/api) (`API_MODE=true`). It shows account status, point totals, and trends at `http://<host-ip>:8890`, and can start/stop/schedule runs and edit the bot's config.
 
 ## Screenshots

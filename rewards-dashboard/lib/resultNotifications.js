@@ -1,0 +1,147 @@
+"use strict";
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+
+const PROVIDERS = {
+  wecom: {fields:['webhook'], required:['webhook']},
+  dingtalk: {fields:['webhook','secret','keyword'], required:['webhook']},
+  telegram: {fields:['botToken','chatId'], required:['botToken','chatId']},
+  serverchan: {fields:['sendKey'], required:['sendKey']},
+};
+const messages = {
+  completed:['已完成','Completed'], partial:['部分任务未完成','Some activities incomplete'], failed:['失败','Failed'],
+  cancelled:['已取消','Cancelled'], interrupted:['已中断','Interrupted'], done:['运行结束','Run ended'],
+  stopped:['已停止','Stopped'], crashed:['异常退出','Crashed'], success:['运行结束','Run ended'],
+  error:['失败','Failed'], skipped:['已跳过','Skipped'],
+};
+const isZh = language => language !== 'en';
+function stateLabel(state, language) { return messages[state]?.[isZh(language)?0:1] || (isZh(language)?'结果未确认':'Outcome unconfirmed'); }
+function summary(run, accounts, title='Microsoft Rewards', language='zh-CN') {
+  const zh=isZh(language), unknown=zh?'未知':'Unknown', unconfirmed=zh?'未确认':'Unconfirmed';
+  const lines=[`${title} ${zh?'｜执行结果':'| Run results'}`,
+    `${zh?'状态':'Status'}: ${stateLabel(run.outcome||run.status,language)}`,
+    `${zh?'已处理账号':'Accounts processed'}: ${run.accountsProcessed??unknown} / ${run.totalAccounts??unknown}`,
+    `${zh?'本轮积分变化':'Points change'}: ${run.totalGained==null?unconfirmed:run.totalGained}`,
+    `${zh?'耗时（分钟）':'Duration (minutes)'}: ${run.runtimeMin==null?unknown:Math.round(run.runtimeMin*10)/10}`,
+    `${zh?'结束时间':'Ended at'}: ${run.endTs||unknown}`];
+  const start=Date.parse(run.startTs),end=Date.parse(run.endTs);
+  const footer=zh?'运行结束不代表所有活动均已完成；详情请查看面板。':'A run ending does not mean every activity completed. See the dashboard for details.';
+  for(const a of accounts){
+    const at=Date.parse(a.lastEndAt);if(!(at>=start&&at<=end))continue;
+    const label=String(a.email||a.userName||(zh?'账号':'Account')).replace(/[\r\n]/g,' ');
+    const line=`${label}: ${stateLabel(a.lastOutcome,language)}; ${zh?'积分':'points'} ${a.lastGained==null?unconfirmed:a.lastGained}`;
+    if(Buffer.byteLength([...lines,line,footer].join('\n'),'utf8')>1850){lines.push(zh?'更多账号请查看面板。':'See the dashboard for more accounts.');break;}
+    lines.push(line);
+  }
+  lines.push(footer);return lines.join('\n');
+}
+function validateHook(value, provider) {
+  let u;try{u=new URL(value);}catch{throw Error('Enter a valid notification webhook URL.');}
+  const wecom=provider==='wecom',host=wecom?'qyapi.weixin.qq.com':'oapi.dingtalk.com',endpoint=wecom?'/cgi-bin/webhook/send':'/robot/send',key=wecom?'key':'access_token';
+  if(u.protocol!=='https:'||u.hostname!==host||u.port||u.pathname!==endpoint||u.username||u.password||u.hash||
+    !/^[A-Za-z0-9_-]{8,200}$/.test(u.searchParams.get(key)||'')||
+    [...u.searchParams.keys()].some(k=>k!==key)||u.searchParams.getAll(key).length!==1)
+    throw Error('Use the official HTTPS webhook URL without extra parameters.');
+  return u.href;
+}
+function validateFields(provider, fields) {
+  if(fields.webhook)fields.webhook=validateHook(fields.webhook,provider);
+  if(fields.botToken&&!/^\d+:[A-Za-z0-9_-]{10,200}$/.test(fields.botToken))throw Error('Enter a valid Telegram bot token.');
+  if(fields.chatId&&!/^(?:-?\d+|@[A-Za-z0-9_]{5,})$/.test(fields.chatId))throw Error('Enter a Telegram chat ID or channel username.');
+  if(fields.sendKey&&!/^SCT[A-Za-z0-9_-]{8,200}$/.test(fields.sendKey))throw Error('Enter a ServerChan Turbo SendKey starting with SCT.');
+  if(fields.secret&&!/^SEC[A-Za-z0-9]{8,200}$/.test(fields.secret))throw Error('Enter the DingTalk signing secret starting with SEC.');
+  if(fields.keyword&&(/[\r\n]/.test(fields.keyword)||fields.keyword.length>80))throw Error('Use a single-line DingTalk keyword of up to 80 characters.');
+  return fields;
+}
+function requestFor(provider, fields, text, now=Date.now()) {
+  const options={method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),headers:{'Content-Type':'application/json'}};
+  let url,body;
+  if(provider==='wecom'){url=validateHook(fields.webhook,provider);body={msgtype:'text',text:{content:text}};}
+  else if(provider==='dingtalk'){
+    const u=new URL(validateHook(fields.webhook,provider));
+    if(fields.secret){const timestamp=String(now);u.searchParams.set('timestamp',timestamp);u.searchParams.set('sign',crypto.createHmac('sha256',fields.secret).update(timestamp+'\n'+fields.secret).digest('base64'));}
+    url=u.href;body={msgtype:'text',text:{content:(fields.keyword?fields.keyword+'\n':'')+text}};
+  }else if(provider==='telegram'){
+    url=`https://api.telegram.org/bot${fields.botToken}/sendMessage`;body={chat_id:fields.chatId,text};
+  }else if(provider==='serverchan'){
+    url=`https://sctapi.ftqq.com/${fields.sendKey}.send`;
+    options.headers['Content-Type']='application/x-www-form-urlencoded';
+    options.body=new URLSearchParams({title:Array.from(text.split('\n')[0]).slice(0,32).join(''),desp:text}).toString();
+  }else throw Error('Unknown result notification channel.');
+  if(body)options.body=JSON.stringify(body);
+  return {url,options};
+}
+class ResultNotifications {
+  constructor({dir,fetchImpl=fetch,now=Date.now,title='Microsoft Rewards'}){
+    this.file=path.join(dir,'result-notifications.json');this.fetch=fetchImpl;this.now=now;this.title=title;this.started=now();this.busy=false;
+    this.state={version:1,language:'zh-CN',channels:Object.fromEntries(Object.keys(PROVIDERS).map(id=>[id,{enabled:false,fields:{},claimed:[],lastDelivery:null}]))};
+    if(fs.existsSync(this.file)){
+      const saved=JSON.parse(fs.readFileSync(this.file,'utf8'));
+      if(saved.version!==1||!saved.channels||!['en','zh-CN'].includes(saved.language))throw Error('Result notification configuration is invalid.');
+      this.state.language=saved.language;
+      for(const id of Object.keys(PROVIDERS))if(saved.channels[id])Object.assign(this.state.channels[id],saved.channels[id]);
+    }else{
+      const old=path.join(dir,'wecom.json');
+      if(fs.existsSync(old)){
+        const saved=JSON.parse(fs.readFileSync(old,'utf8'));
+        const lastDelivery=saved.lastDelivery?{...saved.lastDelivery,...(saved.lastDelivery.error?{error:'Legacy WeCom delivery failed. Send a test for current details.'}:{})}:null;
+        this.state.channels.wecom={enabled:!!saved.enabled,fields:{webhook:saved.webhook||''},enabledSince:saved.enabledSince,claimed:saved.claimed||[],lastDelivery};
+        this.save(); // Keep the old file untouched; migrate once and preserve delivery history.
+      }
+    }
+  }
+  save(){fs.mkdirSync(path.dirname(this.file),{recursive:true});const temp=this.file+'.tmp';fs.writeFileSync(temp,JSON.stringify(this.state),{mode:0o600});fs.renameSync(temp,this.file);fs.chmodSync(this.file,0o600);}
+  publicConfig(){return {language:this.state.language,channels:Object.fromEntries(Object.entries(this.state.channels).map(([id,c])=>[id,{enabled:c.enabled,configured:PROVIDERS[id].required.every(k=>!!c.fields[k]),savedFields:Object.fromEntries(PROVIDERS[id].fields.map(k=>[k,!!c.fields[k]])),lastDelivery:c.lastDelivery}]))};}
+  configure(patch){
+    if(!patch||!['en','zh-CN'].includes(patch.language)||!patch.channels||Array.isArray(patch.channels))throw Error('Invalid result notification settings.');
+    const next=structuredClone(this.state);next.language=patch.language;
+    for(const [id,p] of Object.entries(patch.channels)){
+      if(!Object.hasOwn(PROVIDERS,id)||!p||typeof p.enabled!=='boolean'||(p.fields&&typeof p.fields!=='object'))throw Error('Invalid result notification channel settings.');
+      const c=next.channels[id];
+      if(p.clear===true){c.enabled=false;c.fields={};continue;}
+      for(const k of PROVIDERS[id].fields){
+        if(p.fields?.[k]!==undefined){
+          if(typeof p.fields[k]!=='string'||p.fields[k].length>1024)throw Error('Invalid notification field value.');
+          if(p.fields[k].trim())c.fields[k]=p.fields[k].trim(); // Blank means preserve, never return stored credentials.
+        }
+      }
+      validateFields(id,c.fields);
+      if(p.enabled&&!PROVIDERS[id].required.every(k=>!!c.fields[k]))throw Error('Fill in the required fields before enabling this channel.');
+      if(p.enabled&&!c.enabled)c.enabledSince=this.now();c.enabled=p.enabled;
+    }
+    const previous=this.state;this.state=next;try{this.save();}catch{this.state=previous;throw Error('Could not save result notification settings. Check data directory permissions.');}
+    return this.publicConfig();
+  }
+  async send(id,text){
+    if(!Object.hasOwn(PROVIDERS,id))throw Error('Unknown result notification channel.');
+    const c=this.state.channels[id];if(!PROVIDERS[id].required.every(k=>!!c.fields[k]))throw Error('Save this channel configuration before testing.');
+    validateFields(id,{...c.fields});const {url,options}=requestFor(id,c.fields,text,this.now());
+    let response,result;try{response=await this.fetch(url,options);}catch{throw Error('Notification request failed or timed out. Check the dashboard network.');}
+    try{result=await response.json();}catch{throw Error('Notification provider returned an invalid response.');}
+    const ok=id==='telegram'?result.ok===true:id==='serverchan'?result.code===0:result.errcode===0;
+    if(!response.ok||!ok){const code=id==='telegram'?result.error_code:id==='serverchan'?result.code:result.errcode;throw Error(`Notification rejected (HTTP ${response.status}, code ${Number.isFinite(code)?code:'unknown'}).`);}
+  }
+  async test(id){
+    const zh=isZh(this.state.language);
+    await this.send(id,`${this.title} ${zh?'｜测试通知':'| Test notification'}\n${zh?'通知渠道连接测试。这是测试消息，不是任务执行结果。':'Notification channel test. This is not a task execution result.'}`);
+    return {ok:true};
+  }
+  async scan(runs,accounts){
+    if(this.busy)return;this.busy=true;
+    try{
+      for(const run of [...runs].reverse()){
+        const end=Date.parse(run.endTs);
+        if(run.status==='running'||!Number.isFinite(end)||end<this.started||this.now()-end<5000)continue;
+        for(const [id,c] of Object.entries(this.state.channels)){
+          if(!c.enabled||end<(c.enabledSince||0)||c.claimed.includes(run.id))continue;
+          c.claimed=[...c.claimed,run.id].slice(-500);this.save();
+          try{await this.send(id,summary(run,accounts,this.title,this.state.language));c.lastDelivery={at:new Date(this.now()).toISOString(),ok:true,runId:run.id};}
+          catch(e){c.lastDelivery={at:new Date(this.now()).toISOString(),ok:false,runId:run.id,error:e.message};}
+          this.save();
+        }
+      }
+    }finally{this.busy=false;}
+  }
+}
+module.exports={ResultNotifications,PROVIDERS,validateHook,requestFor,summary};

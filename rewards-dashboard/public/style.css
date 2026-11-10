@@ -2364,6 +2364,11 @@ tbody tr:hover {
   gap: var(--space-12);
 }
 
+.result-notifications [hidden] { display: none; }
+.result-channel-switches { margin-top: var(--space-14); }
+.result-notifications > form > .field { max-width: 24rem; }
+.result-notifications .switch span { min-width: 0; overflow-wrap: anywhere; }
+
 /* Reuses accounts.js's .acc-detail-group card + .acc-detail-group-title
    (energy-high accent) as-is, so a config group has the exact same padding,
    radius, and title styling as an account detail group. The .cfg-toggle-groups

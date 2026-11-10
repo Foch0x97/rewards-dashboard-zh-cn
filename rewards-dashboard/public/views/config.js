@@ -1,6 +1,6 @@
 import * as U from "../util.js";
 import { api } from "../api.js";
-import { mountWecom } from "./wecomSettings.js";
+import { mountResultNotifications } from "./resultNotificationSettings.js";
 
 const REDACTED = "***REDACTED***";
 
@@ -1153,7 +1153,7 @@ export default {
                 </div>
             </section>`;
 
-    mountWecom(root);
+    mountResultNotifications(root);
     U.$("#cfgReload", root).addEventListener("click", () => this.refresh(ctx));
 
     U.$("#cfgReveal", root).addEventListener("change", async (e) => {

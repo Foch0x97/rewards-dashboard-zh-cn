@@ -23,6 +23,6 @@ if (html.split('/locales/bootstrap.js').length !== 2 || html.indexOf('/locales/b
 console.log(`语法及入口检查通过：${files.length} 个文件。`);
 const server = readFileSync(resolve(root,'rewards-dashboard/server.js'),'utf8');
 const config = readFileSync(resolve(root,'rewards-dashboard/public/views/config.js'),'utf8');
-if (!server.includes('wecom.scan(') || !server.includes('/api/notifications/wecom') || !config.includes('mountWecom(root)')) {
-  throw Error('企业微信扩展入口缺失，请先适配上游再同步。');
+if (!server.includes('resultNotifications.scan(') || !server.includes('/api/notifications/results') || !config.includes('mountResultNotifications(root)')) {
+  throw Error('执行结果通知扩展入口缺失，请先适配上游再同步。');
 }
