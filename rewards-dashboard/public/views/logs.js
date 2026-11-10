@@ -1,5 +1,5 @@
 import * as U from "../util.js";
-import {logSearchText,exportLogText,renderLogEntry} from '../logDisplay.js';
+import {logSearchText,exportLogText,renderLogEntry,preferredLogDisplay} from '../logDisplay.js';
 
 const MAX_LINES = 3000;
 const LEVEL_RANK = { debug: 0, info: 1, warn: 2, error: 3 };
@@ -114,8 +114,8 @@ export default {
 
   mount(root, ctx) {
     rootEl = root;
-    displayMode=chineseUi()?'zh':'original';
-    try { const saved=localStorage.getItem(DISPLAY_KEY);if(['zh','original','both'].includes(saved))displayMode=saved; } catch {}
+    try { displayMode=preferredLogDisplay(globalThis.localStorage,chineseUi()); }
+    catch { displayMode=preferredLogDisplay(null,chineseUi()); }
     root.innerHTML = `
             <section class="panel" aria-labelledby="logs-heading">
                 <div class="panel-head">
@@ -126,9 +126,8 @@ export default {
                 <div class="toolbar">
                     <label class="field field--inline"><span>Log display</span>
                       <select id="logDisplay" class="input">
-                        <option value="zh">Chinese explanation</option>
-                        <option value="original">Original logs</option>
                         <option value="both">Chinese and original</option>
+                        <option value="original">Original logs</option>
                       </select>
                     </label>
                     <label class="field field--inline">
@@ -155,7 +154,7 @@ export default {
                     <button type="button" id="logClear" class="btn">Clear</button>
                 </div>
 
-                <p class="hint">Log explanations are generated locally. Unrecognized messages remain unchanged. Original logs are always preserved.</p>
+                <p class="hint">Chinese explanations appear above the original English logs. Unknown messages stay unchanged. Bot notification filters still match the original logs.</p>
                 <div class="log-box" id="logBox" tabindex="0" aria-live="off">
                     <p class="empty-note">Waiting for log lines\u2026</p>
                 </div>

@@ -1,6 +1,14 @@
 import {escapeHtml,escapeAttr,fmtTime} from './util.js';
 import {translateLogMessage} from './locales/log-zh-CN.js';
 const cache=new WeakMap();
+export function preferredLogDisplay(storage,chineseUi=true){
+ try{
+  const saved=storage?.getItem('rewards-dashboard-log-display');
+  if(saved==='zh')return 'both'; // Upgrade the old Chinese-only preference.
+  if(saved==='original'||saved==='both')return saved;
+ }catch{}
+ return chineseUi?'both':'original';
+}
 export const logMessage=e=>String(e.message||e.raw||'');
 export function translatedLog(e){
  if(!cache.has(e))cache.set(e,translateLogMessage(logMessage(e)));
@@ -14,7 +22,7 @@ export function exportLogText(entries,bilingual=false){
   return bilingual&&chinese!==logMessage(e)?`${original}\n[中文说明] ${chinese}`:original;
  }).join('\n');
 }
-export function renderLogEntry(e,mode='zh',chineseUi=true){
+export function renderLogEntry(e,mode='both',chineseUi=true){
  const original=logMessage(e),translated=mode==='original'?original:translatedLog(e);
  const changed=translated!==original;
  const time=e.ts||e.receivedAt;

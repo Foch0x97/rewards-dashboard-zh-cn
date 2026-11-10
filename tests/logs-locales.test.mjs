@@ -1,7 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {translateLogMessage as tr} from '../rewards-dashboard/public/locales/log-zh-CN.js';
-import {renderLogEntry,logSearchText,exportLogText} from '../rewards-dashboard/public/logDisplay.js';
+import {renderLogEntry,logSearchText,exportLogText,preferredLogDisplay} from '../rewards-dashboard/public/logDisplay.js';
+import {RECOMMENDED_WEBHOOK_FILTER} from '../rewards-dashboard/public/views/config.js';
+import {createRequire} from 'node:module';
+const {entryToDockerLine}=createRequire(import.meta.url)('../rewards-dashboard/lib/apiClient.js');
+
+test('中文默认双语，旧纯中文偏好自动升级，保留原文选择且不依赖可用的浏览器存储',()=>{
+ assert.equal(preferredLogDisplay({getItem:()=>null}), 'both');
+ assert.equal(preferredLogDisplay({getItem:()=> 'zh'}),'both');
+ assert.equal(preferredLogDisplay({getItem:()=> 'original'}),'original');
+ assert.equal(preferredLogDisplay({getItem:()=> 'both'}),'both');
+ assert.equal(preferredLogDisplay({getItem:()=>{throw Error('blocked');}}),'both');
+ assert.equal(preferredLogDisplay(null,false),'original');
+ const html=renderLogEntry({level:'info',message:'Starting login process',raw:'[INFO] Starting login process'});
+ assert.ok(html.includes('开始登录'));assert.ok(html.includes('<pre'));assert.ok(!html.includes('<details'));
+});
+test('双语渲染和导出不改原始日志管道，推荐通知规则可匹配v4与v5结果',()=>{
+ const f=RECOMMENDED_WEBHOOK_FILTER.webhook.webhookLogFilter;
+ assert.equal(f.mode,'whitelist');
+ for(const message of ['Starting account: demo@example.invalid','Please approve login and select number: 42','Collected 100 points','Finished account: demo@example.invalid | status=partial','Completed account: demo@example.invalid','Completed all accounts | status=partial','Account flow failed for demo@example.invalid: ERR_LOGIN','Run interrupted']){
+  const raw=`[2026-11-10T12:00:00Z] [demo@example.invalid] [INFO] MAIN [FLOW] ${message}`;
+  const entry=Object.freeze({id:1,receivedAt:'2026-11-10T12:00:00Z',level:'info',message,raw});
+  const before=entryToDockerLine(entry);renderLogEntry(entry);exportLogText([entry],true);
+  assert.equal(entryToDockerLine(entry),before);assert.equal(entry.raw,raw);
+  assert.ok(f.keywords.some(k=>raw.toLowerCase().includes(k.toLowerCase())),message);
+ }
+ assert.ok(f.keywords.includes('[account-error]'));
+});
 
 test('登录和二次验证提示保留确认数字及超时时间',()=>{
  assert.equal(tr('Please approve login and select number: 42'),'请在手机验证器中确认登录，并选择数字 42');

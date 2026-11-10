@@ -552,16 +552,15 @@ const FIELD_GROUPS_BY_TITLE = new Map(
   FIELD_GROUPS.map((g) => [g.title, g.fields]),
 );
 
-// The exact filter the bot's own maintainer uses for push-notification
-// webhooks (ntfy, and equally relevant to Discord/Telegram): without it,
-// every log line - including debug noise - goes out as a notification.
-const RECOMMENDED_WEBHOOK_FILTER = {
+// Match the bot's original English logs. Keep v4's "collected" and include
+// v5 account/run completion and failure lines. Applied only on explicit click.
+export const RECOMMENDED_WEBHOOK_FILTER = {
   webhook: {
     webhookLogFilter: {
       enabled: true,
       mode: "whitelist",
       levels: [],
-      keywords: ["starting account", "select number", "collected"],
+      keywords: ["starting account", "select number", "collected", "completed account:", "finished account:", "completed all accounts", "account flow failed", "[account-error]", "run interrupted"],
       regexPatterns: [],
     },
   },
@@ -877,7 +876,7 @@ function webhookFilterTipHtml() {
             which notifications you receive.
             <span class="notice-actions">
                 <button type="button" id="cfgWebhookFilterTipBtn" class="btn btn-primary btn-small">Apply recommended filter</button>
-                <span class="notice-sub">whitelist &middot; starting account, select number, collected</span>
+                <span class="notice-sub">Whitelist: account starts, login approvals, account/run results and account failures</span>
             </span>
         </p>`;
 }

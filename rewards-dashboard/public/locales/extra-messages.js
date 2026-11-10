@@ -1,5 +1,7 @@
 // 补齐后端活动名称、已知错误和容易被组合文案漏掉的状态。
 export const extraMessages = Object.fromEntries(`
+Chinese explanations appear above the original English logs. Unknown messages stay unchanged. Bot notification filters still match the original logs.|中文说明显示在英文原文上方；未知日志保持原样。脚本的通知筛选仍匹配原始日志。
+Whitelist: account starts, login approvals, account/run results and account failures|白名单：账号开始、登录确认、账号和本轮结果、账号失败
 Feishu / Lark|飞书 / Lark
 PushPlus|PushPlus 推送加
 Feishu bot webhook URL|飞书机器人 Webhook 地址

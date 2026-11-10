@@ -4,6 +4,8 @@
 
 ## Fork: execution result notifications
 
+The Chinese interface now defaults to bilingual logs, with the English original visible below each known Chinese explanation. Legacy Chinese-only display preferences upgrade to bilingual; an original-only view remains available. Translation is browser-only and does not rewrite the bot's notification source. Recommended log-notification filters retain v4 keywords and include v5 account/run completion and account failures; existing settings change only when you explicitly apply the recommendation.
+
 Open **Config → Execution result notifications**, select the channels you need, fill in their credentials, choose the notification language, and save before testing. The form, help text and known errors support English and Simplified Chinese. The message language is a separate setting, not tied to the current browser's interface language.
 
 - **WeCom group bot:** official group bot webhook, not an enterprise application secret.

@@ -9,7 +9,7 @@
 - 中文集中在 `rewards-dashboard/public/locales/`，页面通过独立入口加载语言包，尽量减少与上游的冲突。
 - 本 fork 额外提供独立的「执行结果通知」：支持企业微信机器人、钉钉、Telegram、Server 酱 Turbo、飞书、PushPlus、Bark、Gotify、Discord、ntfy 共 10 个可选渠道，中英文界面与通知内容语言分别设置。后端为 `lib/resultNotifications.js`，前端为 `public/views/resultNotificationSettings.js`；`server.js` 接入独立设置接口和完成记录检查，`views/config.js` 接入表单。不会向原脚本写入不支持的配置项。
 - 原始日志、配置 JSON、配置键、命令、账号标识和用户输入保留原文；没有使用在线翻译服务，也不会把账号数据发送到翻译接口。
-- 日志页新增中文说明、原始日志、中文与原文三种显示方式。中文说明下可展开原文；搜索匹配中英文，导出可选原始或双语。显示偏好保存在当前浏览器。
+- 中文界面的日志页默认中英双语，中文说明下直接显示英文原文，不再折叠。旧版纯中文偏好自动切换双语，也可选择原始日志；搜索匹配中英文，导出可选原始或双语。显示偏好保存在当前浏览器。
 - 增加中文检查与手动上游同步工作流。上游新增而尚未收录的文案保留英文，不猜译接口响应。
 
 首版基于上游提交 `4ddb7284d889c9bc4a91146f1e98495506fbc6cf`。
@@ -61,6 +61,8 @@ node --test tests/*.test.mjs
 动态句式集中在 `locales/dynamic-zh-CN.js`，后端内置名称和已知提示补充在 `locales/extra-messages.js`。中文日期由 `public/util.js` 按所选语言生成；中文桌面安装信息使用独立的 `manifest.zh-CN.json`，英文清单保留。
 
 日志中文说明集中在 `public/locales/log-zh-CN.js`，由 `public/logDisplay.js` 在浏览器中显示，不改动 SSE、解析器、数据库或原始导出。仅翻译已确认的句式和字段说明；账号、搜索词、错误码、网址和诊断详情保留，未知信息、JSON 和多行堆栈保持原样。新版本日志仍可能需要补充句式，不能据此认定全部英文已翻译。
+
+原版日志通知在微软脚本进程内按英文原始日志筛选，不依赖浏览器显示语言。推荐规则兼容 v4/v5，新增账号完成、整轮结果和账号失败句式，仅在用户点击后保存到脚本；不会自动修改当前通知配置。
 
 日志措辞参考 [chiihero/Microsoft-Rewards-Script 的 V4-china 分支](https://github.com/chiihero/Microsoft-Rewards-Script/tree/V4-china)，并按 TheNetsky v5 实际日志含义单独编写显示规则，没有引入该仓库的任务执行代码。`tests/logs-locales.test.mjs` 检查原文保留、搜索词保护、结果含义和安全转义。更新部署时只需重建面板，无需改动微软脚本容器或账号会话。
 
