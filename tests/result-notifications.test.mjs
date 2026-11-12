@@ -62,6 +62,21 @@ test('每轮每渠道仅发一条，一个渠道失败不妨碍其他渠道，�
  for(const id of Object.keys(credentials).filter(id=>id!=='dingtalk'))assert.equal(n.publicConfig().channels[id].lastDelivery.ok,true,id);
  assert.equal(n.publicConfig().channels.dingtalk.lastDelivery.ok,false);assert.ok(!JSON.stringify(n.publicConfig()).includes('test-only'));
 });
+test('长任务明细分条发送，所有渠道保留末尾任务，重复扫描不重发',async t=>{
+ const sent=[];const {n,tick,run}=fixture(t,async(u,o)=>{sent.push({u,body:o.body});return{ok:true,status:200,json:async()=>success(u)};});
+ n.configure(patch());tick(110000);
+ const details=[{email:'sample@example.invalid',startedAt:run.startTs,endedAt:run.endTs,account:{status:'completed',collected:0,currentBalance:100,durationSeconds:1,completion:{completed:Array.from({length:160},(_,i)=>({activity:'daily-set',offerId:String(i),title:`任务${i}`,pointsGained:0,pointsKnown:true}))}}}];
+ await n.scan([run],[],()=>details);const count=sent.length;await n.scan([run],[],()=>details);assert.equal(sent.length,count);
+ for(const id of Object.keys(credentials)){const d=n.publicConfig().channels[id].lastDelivery;assert.ok(d.partsTotal>1,id);assert.equal(d.partsSent,d.partsTotal,id);assert.equal(d.ok,true);}
+ const wecomBodies=sent.filter(r=>r.u.includes('qyapi.weixin')).map(r=>JSON.parse(r.body).text.content);
+ assert.ok(wecomBodies.join('\n').includes('任务159'));for(const text of wecomBodies)assert.ok(Buffer.byteLength(text)<=2048);
+});
+test('分条中途被拒绝记录已接收条数，后续不自动重发',async t=>{
+ let calls=0;const {n,tick,run}=fixture(t,async()=>({ok:true,status:200,json:async()=>({errcode:++calls===2?400:0})}));
+ n.configure(patch(['wecom']));tick(110000);
+ const details=[{email:'sample@example.invalid',startedAt:run.startTs,endedAt:run.endTs,account:{completion:{incomplete:Array.from({length:100},(_,i)=>({activity:'search',title:`任务${i}`,reason:'quota-unavailable'}))}}}];
+ await n.scan([run],[],()=>details);const d=n.publicConfig().channels.wecom.lastDelivery;assert.equal(d.ok,false);assert.equal(d.partsSent,1);assert.ok(d.partsTotal>1);await n.scan([run],[],()=>details);assert.equal(calls,2);
+});
 test('跳过历史、仍在运行和启用前记录，重启不补发，关掉的渠道不发送',async t=>{
  let sent=0;const {n,dir,tick,run}=fixture(t,async()=>{sent++;return{ok:true,status:200,json:async()=>({errcode:0})};});
  n.configure(patch(['wecom']));tick(110000);await n.scan([{...run,id:3,endTs:new Date(99000).toISOString()},{...run,id:4,status:'running'},run],[]);assert.equal(sent,1);
@@ -79,7 +94,7 @@ test('中英文汇总和测试消息都按通知语言生成，不包含原始�
  const bodies=[];const {n,run}=fixture(t,async(u,o)=>{bodies.push(JSON.parse(o.body).text.content);return{ok:true,status:200,json:async()=>({errcode:0})};});
  n.configure(patch(['wecom'],'en'));await n.test('wecom');assert.match(bodies[0],/not a task execution result/);assert.ok(!/[\u4e00-\u9fff]/.test(bodies[0]));
  const accounts=Array.from({length:100},()=>({email:'demo@example.invalid',lastEndAt:run.endTs,lastOutcome:'failed',lastError:'private-token'}));
- for(const lang of ['en','zh-CN']){const body=summary(run,accounts,'Microsoft Rewards',lang);assert.ok(Buffer.byteLength(body)<2000);assert.ok(!body.includes('private-token'));if(lang==='en'){assert.ok(!/[\u4e00-\u9fff]/.test(body));assert.match(body,/Some activities incomplete/);}else assert.match(body,/部分任务未完成/);}
+ for(const lang of ['en','zh-CN']){const body=summary(run,accounts,'Microsoft Rewards',lang);assert.ok(Buffer.byteLength(body)<2000);assert.ok(!body.includes('private-token'));if(lang==='en'){assert.ok(!/[\u4e00-\u9fff]/.test(body));assert.match(body,/Partially completed/);}else assert.match(body,/部分完成/);}
 });
 test('结果通知表单采用英文原文，全部已知渠道与帮助文字都有中文翻译',()=>{
  const config={language:'en',channels:Object.fromEntries(resultChannels.map(c=>[c.id,{enabled:true,configured:false,savedFields:{}}]))};

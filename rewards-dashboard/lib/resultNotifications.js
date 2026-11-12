@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const {summary,splitNotificationText}=require('./resultSummary');
 
 const PROVIDERS = {
   wecom: {fields:['webhook'], required:['webhook']},
@@ -15,33 +16,7 @@ const PROVIDERS = {
   discord: {fields:['webhook'], required:['webhook']},
   ntfy: {fields:['serverUrl','topic','token','priority'], required:['topic']},
 };
-const messages = {
-  completed:['已完成','Completed'], partial:['部分任务未完成','Some activities incomplete'], failed:['失败','Failed'],
-  cancelled:['已取消','Cancelled'], interrupted:['已中断','Interrupted'], done:['运行结束','Run ended'],
-  stopped:['已停止','Stopped'], crashed:['异常退出','Crashed'], success:['运行结束','Run ended'],
-  error:['失败','Failed'], skipped:['已跳过','Skipped'],
-};
 const isZh = language => language !== 'en';
-function stateLabel(state, language) { return messages[state]?.[isZh(language)?0:1] || (isZh(language)?'结果未确认':'Outcome unconfirmed'); }
-function summary(run, accounts, title='Microsoft Rewards', language='zh-CN') {
-  const zh=isZh(language), unknown=zh?'未知':'Unknown', unconfirmed=zh?'未确认':'Unconfirmed';
-  const lines=[`${title} ${zh?'｜执行结果':'| Run results'}`,
-    `${zh?'状态':'Status'}: ${stateLabel(run.outcome||run.status,language)}`,
-    `${zh?'已处理账号':'Accounts processed'}: ${run.accountsProcessed??unknown} / ${run.totalAccounts??unknown}`,
-    `${zh?'本轮积分变化':'Points change'}: ${run.totalGained==null?unconfirmed:run.totalGained}`,
-    `${zh?'耗时（分钟）':'Duration (minutes)'}: ${run.runtimeMin==null?unknown:Math.round(run.runtimeMin*10)/10}`,
-    `${zh?'结束时间':'Ended at'}: ${run.endTs||unknown}`];
-  const start=Date.parse(run.startTs),end=Date.parse(run.endTs);
-  const footer=zh?'运行结束不代表所有活动均已完成；详情请查看面板。':'A run ending does not mean every activity completed. See the dashboard for details.';
-  for(const a of accounts){
-    const at=Date.parse(a.lastEndAt);if(!(at>=start&&at<=end))continue;
-    const label=String(a.email||a.userName||(zh?'账号':'Account')).replace(/[\r\n]/g,' ');
-    const line=`${label}: ${stateLabel(a.lastOutcome,language)}; ${zh?'积分':'points'} ${a.lastGained==null?unconfirmed:a.lastGained}`;
-    if(Buffer.byteLength([...lines,line,footer].join('\n'),'utf8')>1850){lines.push(zh?'更多账号请查看面板。':'See the dashboard for more accounts.');break;}
-    lines.push(line);
-  }
-  lines.push(footer);return lines.join('\n');
-}
 function validateHook(value, provider) {
   let u;try{u=new URL(value);}catch{throw Error('Enter a valid notification webhook URL.');}
   if(provider==='feishu'||provider==='discord'){
@@ -176,17 +151,21 @@ class ResultNotifications {
     await this.send(id,`${this.title} ${zh?'｜测试通知':'| Test notification'}\n${zh?'通知渠道连接测试。这是测试消息，不是任务执行结果。':'Notification channel test. This is not a task execution result.'}`);
     return {ok:true};
   }
-  async scan(runs,accounts){
-    if(this.busy)return;this.busy=true;
+  async scan(runs,accounts,detailsForRun=()=>[]){
+    if(this.busy||!Object.values(this.state.channels).some(c=>c.enabled))return;this.busy=true;
     try{
       for(const run of [...runs].reverse()){
         const end=Date.parse(run.endTs);
         if(run.status==='running'||!Number.isFinite(end)||end<this.started||this.now()-end<5000)continue;
-        for(const [id,c] of Object.entries(this.state.channels)){
-          if(!c.enabled||end<(c.enabledSince||0)||c.claimed.includes(run.id))continue;
+        const pending=Object.entries(this.state.channels).filter(([,c])=>c.enabled&&end>=(c.enabledSince||0)&&!c.claimed.includes(run.id));
+        if(!pending.length)continue;
+        let details=[];try{details=await detailsForRun(run);}catch{console.warn('[notifications] Per-run activity details unavailable; sending an overview with an explicit missing-details note.');}
+        const chunks=splitNotificationText(summary(run,accounts,this.title,this.state.language,details));
+        for(const [id,c] of pending){
           c.claimed=[...c.claimed,run.id].slice(-500);this.save();
-          try{await this.send(id,summary(run,accounts,this.title,this.state.language));c.lastDelivery={at:new Date(this.now()).toISOString(),ok:true,runId:run.id};}
-          catch(e){c.lastDelivery={at:new Date(this.now()).toISOString(),ok:false,runId:run.id,error:e.message};}
+          let partsSent=0;
+          try{for(let i=0;i<chunks.length;i++){await this.send(id,(chunks.length>1?`${this.title.slice(0,50)} [${i+1}/${chunks.length}]\n`:'')+chunks[i]);partsSent++;}c.lastDelivery={at:new Date(this.now()).toISOString(),ok:true,runId:run.id,partsSent,partsTotal:chunks.length};}
+          catch(e){c.lastDelivery={at:new Date(this.now()).toISOString(),ok:false,runId:run.id,error:e.message,partsSent,partsTotal:chunks.length};}
           this.save();
         }
       }

@@ -43,7 +43,10 @@ const store = new Store();
 const resultNotifications = new ResultNotifications({dir: process.env.DATA_DIR || path.join(__dirname, "data"), title: DISPLAY_NAME});
 // Independent of browser tabs and the bot's per-log notification channels.
 setInterval(() => {
-  resultNotifications.scan(store.snapshotRuns(100), store.snapshotAccounts())
+  resultNotifications.scan(store.snapshotRuns(100), store.snapshotAccounts(), async run => {
+    if (activity.needsSync(backend.bot)) await activity.sync(client, backend.bot);
+    return activity.notificationAccounts(run);
+  })
     .catch(() => console.warn("[server] Could not persist result notification status. Check data directory permissions."));
 }, 2000).unref();
 const pendingLoginCodes = new PendingLoginCodes();

@@ -6,17 +6,17 @@ import {RECOMMENDED_WEBHOOK_FILTER} from '../rewards-dashboard/public/views/conf
 import {createRequire} from 'node:module';
 const {entryToDockerLine}=createRequire(import.meta.url)('../rewards-dashboard/lib/apiClient.js');
 
-test('中文默认双语，旧纯中文偏好自动升级，保留原文选择且不依赖可用的浏览器存储',()=>{
- assert.equal(preferredLogDisplay({getItem:()=>null}), 'both');
- assert.equal(preferredLogDisplay({getItem:()=> 'zh'}),'both');
+test('中文默认中文日志，旧双语偏好转为中文日志，保留原文选择且不依赖可用的浏览器存储',()=>{
+ assert.equal(preferredLogDisplay({getItem:()=>null}), 'zh');
+ assert.equal(preferredLogDisplay({getItem:()=> 'zh'}),'zh');
  assert.equal(preferredLogDisplay({getItem:()=> 'original'}),'original');
- assert.equal(preferredLogDisplay({getItem:()=> 'both'}),'both');
- assert.equal(preferredLogDisplay({getItem:()=>{throw Error('blocked');}}),'both');
+ assert.equal(preferredLogDisplay({getItem:()=> 'both'}),'zh');
+ assert.equal(preferredLogDisplay({getItem:()=>{throw Error('blocked');}}),'zh');
  assert.equal(preferredLogDisplay(null,false),'original');
  const html=renderLogEntry({level:'info',message:'Starting login process',raw:'[INFO] Starting login process'});
- assert.ok(html.includes('开始登录'));assert.ok(html.includes('<pre'));assert.ok(!html.includes('<details'));
+ assert.ok(html.includes('开始登录'));assert.ok(!html.includes('<pre'));assert.ok(!html.includes('<details'));
 });
-test('双语渲染和导出不改原始日志管道，推荐通知规则可匹配v4与v5结果',()=>{
+test('中文渲染和导出不改原始日志管道，推荐通知规则可匹配v4与v5结果',()=>{
  const f=RECOMMENDED_WEBHOOK_FILTER.webhook.webhookLogFilter;
  assert.equal(f.mode,'whitelist');
  for(const message of ['Starting account: demo@example.invalid','Please approve login and select number: 42','Collected 100 points','Finished account: demo@example.invalid | status=partial','Completed account: demo@example.invalid','Completed all accounts | status=partial','Account flow failed for demo@example.invalid: ERR_LOGIN','Run interrupted']){
@@ -57,16 +57,16 @@ test('流程结束不误写成所有任务完成，积分未确认不写成零',
 test('中英文都能搜索，渲染不改动原始记录，默认导出保留原文',()=>{
  const entry=Object.freeze({id:1,level:'info',title:'LOGIN',message:'Starting login process',raw:'[INFO] LOGIN Starting login process'});
  assert.ok(logSearchText(entry).includes('开始登录'));assert.ok(logSearchText(entry).includes('starting login process'));
- const zh=renderLogEntry(entry,'zh');assert.ok(zh.includes('开始登录'));assert.ok(zh.includes('<details'));assert.ok(zh.includes(entry.raw));
+ const zh=renderLogEntry(entry,'zh');assert.ok(zh.includes('开始登录'));assert.ok(!zh.includes('<details'));assert.ok(!zh.includes(entry.raw));
  const original=renderLogEntry(entry,'original');assert.ok(original.includes(entry.message));assert.ok(!original.includes('<details'));
- const both=renderLogEntry(entry,'both');assert.ok(both.includes('<pre'));assert.ok(!both.includes('<details'));
+ const both=renderLogEntry(entry,'zh');assert.ok(!both.includes('<pre'));assert.ok(!both.includes('<details'));
  assert.equal(entry.message,'Starting login process');assert.equal(exportLogText([entry]),entry.raw);
- assert.equal(exportLogText([entry],true),entry.raw+'\n[中文说明] 开始登录');
+ assert.equal(exportLogText([entry],true),'[信息] [登录与会话] 开始登录');
 });
 test('原文和错误详情中的HTML转义，未识别日志不重复导出',()=>{
  const entry=Object.freeze({level:'error',title:'<img src=x>',message:'Fatal error: <script>alert(1)</script>',raw:'<img onerror=alert(1)>'});
  for(const mode of ['zh','original','both']){
   const html=renderLogEntry(entry,mode);assert.ok(!html.includes('<script>'));assert.ok(!html.includes('<img'));
  }
- assert.equal(exportLogText([{message:'unknown message'}],true),'unknown message');
+ assert.match(exportLogText([{message:'unknown message'}],true),/暂无中文说明/);
 });

@@ -1,5 +1,12 @@
 // 补齐后端活动名称、已知错误和容易被组合文案漏掉的状态。
 export const extraMessages = Object.fromEntries(`
+Send per-account results after a run ends: points, balance, duration, completed tasks, previously completed tasks and problems. Long results are split into numbered messages. These settings are independent of the bot's log notifications.|每轮结束后按账号推送积分、余额、耗时及任务明细，区分本次完成、之前已完成和遇到的问题。内容较长时分条编号发送。这些设置独立于脚本的日志通知。
+Message parts accepted:|服务商已接收条数：
+Chinese logs|中文日志
+English logs|英文日志
+Export Chinese logs|导出中文日志
+Export English logs|导出英文日志
+Choose Chinese logs for readable explanations or English logs for the untouched original. Unrecognized records are marked explicitly. Bot notification filters still use the original logs.|中文日志显示易读的中文说明；英文日志保留完整原文。未收录的记录会明确标注，通知筛选仍使用原始日志。
 Chinese explanations appear above the original English logs. Unknown messages stay unchanged. Bot notification filters still match the original logs.|中文说明显示在英文原文上方；未知日志保持原样。脚本的通知筛选仍匹配原始日志。
 Whitelist: account starts, login approvals, account/run results and account failures|白名单：账号开始、登录确认、账号和本轮结果、账号失败
 Feishu / Lark|飞书 / Lark

@@ -37,7 +37,7 @@ export const resultChannels = [
 
 export function resultSettingsHtml(config){
  return `<div class="panel-head"><h2>Execution result notifications</h2></div>
- <p class="panel-sub">Send one summary to each enabled channel after a run ends: outcome, accounts, points and duration. These settings are independent of the bot's log notifications.</p>
+ <p class="panel-sub">Send per-account results after a run ends: points, balance, duration, completed tasks, previously completed tasks and problems. Long results are split into numbered messages. These settings are independent of the bot's log notifications.</p>
  <p class="hint">The dashboard service must stay running. Historical results are not resent after restart; failed deliveries are shown here without automatic retries.</p>
  <form data-result-form>
   <div class="field field-item"><label for="result-language">Notification language</label><select id="result-language" name="language" class="input"><option value="zh-CN"${config.language==='zh-CN'?' selected':''}>Simplified Chinese</option><option value="en"${config.language==='en'?' selected':''}>English</option></select></div>
@@ -49,7 +49,7 @@ export function resultSettingsHtml(config){
     <h3 class="acc-detail-group-title">${esc(c.name)}</h3><p><a href="${attr(c.docs)}" target="_blank" rel="noopener noreferrer">Official documentation</a></p>
     <div class="field-grid">${c.fields.map(f=>`<label class="field field-item"><span>${esc(f.label)}</span><input name="${c.id}-${f.key}" class="input" type="${f.type||'password'}" autocomplete="off" spellcheck="false" value="" placeholder="${attr(s.savedFields?.[f.key]?'Saved — leave blank to keep':f.placeholder||'')}"><span class="panel-sub">${esc(f.hint)}</span></label>`).join('')}</div>
     <p class="panel-sub">${s.configured?'Channel configuration saved.':'Channel not configured.'}</p>
-    ${s.lastDelivery?`<p class="panel-sub"><span>${s.lastDelivery.ok?'Last result delivery: accepted by provider.':'Last result delivery: failed.'}</span> <time>${esc(s.lastDelivery.at)}</time>${s.lastDelivery.error?` <span>${esc(s.lastDelivery.error)}</span>`:''}</p>`:''}
+    ${s.lastDelivery?`<p class="panel-sub"><span>${s.lastDelivery.ok?'Last result delivery: accepted by provider.':'Last result delivery: failed.'}</span> <time>${esc(s.lastDelivery.at)}</time>${s.lastDelivery.partsTotal?` <span>Message parts accepted:</span> ${Number(s.lastDelivery.partsSent)||0}/${Number(s.lastDelivery.partsTotal)||0}`:''}${s.lastDelivery.error?` <span>${esc(s.lastDelivery.error)}</span>`:''}</p>`:''}
     <div class="form-actions"><button type="button" class="btn" data-result-test="${c.id}">Send test notification</button><label class="check"><input type="checkbox" name="${c.id}-clear"><span>Clear this channel's saved credentials and disable it</span></label></div>
    </section>`;
   }).join('')}</div>

@@ -4,7 +4,7 @@
 
 ## Fork: execution result notifications
 
-The Chinese interface now defaults to bilingual logs, with the English original visible below each known Chinese explanation. Legacy Chinese-only display preferences upgrade to bilingual; an original-only view remains available. Translation is browser-only and does not rewrite the bot's notification source. Recommended log-notification filters retain v4 keywords and include v5 account/run completion and account failures; existing settings change only when you explicitly apply the recommendation.
+The log view has two separate modes: **Chinese logs** and **English logs**, with separate exports. Chinese is the default for the Chinese UI; English keeps original entries intact. Legacy bilingual preferences switch to Chinese. Known messages, fields, statuses and diagnostics have readable Chinese wording; unknown diagnostics explicitly point to English logs rather than mixing languages. Translation is browser-only and never rewrites the bot notification input.
 
 Open **Config → Execution result notifications**, select the channels you need, fill in their credentials, choose the notification language, and save before testing. The form, help text and known errors support English and Simplified Chinese. The message language is a separate setting, not tied to the current browser's interface language.
 
@@ -21,7 +21,7 @@ Open **Config → Execution result notifications**, select the channels you need
 
 Bark, Gotify and ntfy support administrator-selected self-hosted HTTP/HTTPS base URLs, including reverse proxy prefixes. Keep topics, device keys and tokens in their dedicated fields. Updating from the four-channel version preserves existing credentials and delivery history; newly added channels are disabled by default.
 
-Each enabled channel receives one summary after a run ends, including outcome, processed accounts, points change and duration. A provider failure does not block the other channels. Failed deliveries are recorded without automatic retries; historical results are not replayed after restart or enabling a channel. The dashboard service must remain running. Test acceptance by a provider is not proof of delivery to a user's device.
+Each enabled channel receives per-account results after a run ends: points, balance, duration and task details grouped as completed this run, previously completed/claimed, incomplete/problems, unavailable, and skipped. Details come from per-run snapshots, not the merged daily activity table. Missing or omitted details and unknown points are explicit. Long results are split into numbered messages without truncating later tasks; delivery status reports accepted parts. A provider failure does not block the other channels. Failed deliveries are recorded without automatic retries; historical results are not replayed after restart or enabling a channel. The dashboard service must remain running. Test acceptance by a provider is not proof of delivery to a user's device.
 
 Settings are stored in `/data/result-notifications.json` independently of the bot's `config.json`. Saved credentials are not returned to the browser; blank fields preserve them. Clear a channel to remove its credentials and disable it. Existing `/data/wecom.json` settings and deduplication history are migrated once without modifying the original file. Keep both files private. Rebuild only the dashboard to update this feature; no bot session reset is required.
 

@@ -97,12 +97,12 @@ function addEntry(entry, live) {
   return true;
 }
 
-function download(bilingual=false) {
-  const text = exportLogText(entries,bilingual);
+function download(chinese=false) {
+  const text = exportLogText(entries,chinese);
   const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `rewards-log-${bilingual?'bilingual-':''}${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
+  a.download = `rewards-log-${chinese?'chinese-':'english-'}${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -126,8 +126,8 @@ export default {
                 <div class="toolbar">
                     <label class="field field--inline"><span>Log display</span>
                       <select id="logDisplay" class="input">
-                        <option value="both">Chinese and original</option>
-                        <option value="original">Original logs</option>
+                        <option value="zh">Chinese logs</option>
+                        <option value="original">English logs</option>
                       </select>
                     </label>
                     <label class="field field--inline">
@@ -149,12 +149,12 @@ export default {
                     </label>
                     <button type="button" id="logPause" class="btn">Pause</button>
                     <button type="button" id="logMore" class="btn">Load 2000</button>
-                    <button type="button" id="logDownload" class="btn">Download original logs</button>
-                    <button type="button" id="logDownloadBilingual" class="btn">Download bilingual logs</button>
+                    <button type="button" id="logDownload" class="btn">Export English logs</button>
+                    <button type="button" id="logDownloadChinese" class="btn">Export Chinese logs</button>
                     <button type="button" id="logClear" class="btn">Clear</button>
                 </div>
 
-                <p class="hint">Chinese explanations appear above the original English logs. Unknown messages stay unchanged. Bot notification filters still match the original logs.</p>
+                <p class="hint">Choose Chinese logs for readable explanations or English logs for the untouched original. Unrecognized records are marked explicitly. Bot notification filters still use the original logs.</p>
                 <div class="log-box" id="logBox" tabindex="0" aria-live="off">
                     <p class="empty-note">Waiting for log lines\u2026</p>
                 </div>
@@ -199,7 +199,7 @@ export default {
       renderAll();
     });
     U.$("#logDownload", root).addEventListener("click", () => download(false));
-    U.$("#logDownloadBilingual", root).addEventListener("click", () => download(true));
+    U.$("#logDownloadChinese", root).addEventListener("click", () => download(true));
     U.$("#logMore", root).addEventListener("click", async () => {
       try {
         const res = await ctx.api.logs(2000);

@@ -185,7 +185,7 @@ const fields = {
 };
 
 // Split only outside quotes/JSON; never translate or split user queries and error payloads.
-function segments(text) {
+export function segments(text) {
  const out=[];let start=0,quote=null,escape=false,depth=0;
  for(let i=0;i<text.length;i++){
   const c=text[i];

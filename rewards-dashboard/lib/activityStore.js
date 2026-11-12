@@ -429,6 +429,16 @@ class ActivityStore {
 
   // -- sync from the Control API -------------------------------------------
 
+  // Per-run notification data must never use the day's merged activity view.
+  notificationAccounts(run) {
+    const start=Date.parse(run.startTs),end=Date.parse(run.endTs);
+    if(!Number.isFinite(start)||!Number.isFinite(end))return [];
+    return this.stmts.since.all(new Date(start).toISOString()).map(row=>JSON.parse(row.snapshot)).filter(entry=>{
+      const began=Date.parse(entry.startedAt),ended=Date.parse(entry.endedAt);
+      return Math.abs(began-start)<=10000&&ended>=start&&ended<=end+5000;
+    });
+  }
+
   needsSync(status) {
     if (Date.now() < this._retryAt) return false; // back off after a failure
     if (!this.booted) return true;
