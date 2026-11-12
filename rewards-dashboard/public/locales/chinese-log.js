@@ -2,6 +2,7 @@
 import {logCatalog,extraLogCatalog} from './log-catalog-zh-CN.js';
 import {logTerms,logFields,logTags} from './log-vocabulary-zh-CN.js';
 import {segments,translateLogMessage} from './log-zh-CN.js';
+import {activityLabel} from './activity-labels-zh-CN.js';
 const escape=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const all=[...logCatalog,...extraLogCatalog];
 const exact=new Map(all.filter(r=>!(/\{\d+\}/.test(r.en))).map(r=>[r.en,r.zh]));
@@ -17,6 +18,8 @@ const templates=all.filter(r=>/\{\d+\}/.test(r.en)).map(r=>{
 const additional={Error:'错误',TypeError:'类型错误',RangeError:'范围错误',SyntaxError:'语法错误',TimeoutError:'超时错误',AbortError:'请求中止',AggregateError:'多个请求错误',unknown:'未知',null:'未提供',undefined:'未提供',true:'是',false:'否',NaN:'非有效数字',...logTerms};
 const technical=v=>/^(?:https?:\/\/|file:\/\/|[A-Za-z]:[\\/]|\/[^\s]|[^\s@]+@[^\s@]+\.[^\s@]+$)/.test(v)||/^[-+\d\s.,:/%×→<>?()[\]{}]+$/.test(v)||/^⟦\d+⟧$/.test(v)||/^(?:ERR_[A-Z_]+|[A-Z][A-Z0-9_]{2,}|[a-f\d]{12,}|v?\d+(?:\.\d+)+(?:[-\w.]*)?)$/.test(v);
 const wording=[
+ [/net::(ERR_[A-Z_]+)(?: at (https?:\/\/[^\s；]+))?/g,(_,code,url)=>(({ERR_CONNECTION_CLOSED:'网络连接已关闭',ERR_CONNECTION_RESET:'连接被重置',ERR_CONNECTION_REFUSED:'连接被拒绝',ERR_NAME_NOT_RESOLVED:'域名解析失败',ERR_TIMED_OUT:'网络请求超时',ERR_CERT_AUTHORITY_INVALID:'证书签发机构不受信任',ERR_TUNNEL_CONNECTION_FAILED:'代理隧道连接失败'})[code]||'浏览器网络请求失败')+`（错误码：net::${code}）`+(url?'；地址：'+url:'')],
+ [/\bstreak=(\d+\/\d+)/g,'连续签到进度：$1'],
  [/waiting for locator\((.*?)\) to be (visible|hidden|attached|detached|stable|enabled|editable)/g,(_,target,state)=>'等待定位控件（'+target+'）'+({visible:'可见',hidden:'隐藏',attached:'载入',detached:'移除',stable:'稳定',enabled:'可用',editable:'可编辑'})[state]],
  [/\bTarget page, context or browser has been closed\b/g,'目标页面、浏览器会话或浏览器已关闭'],
  [/\bTimeout ([\d.]+)ms exceeded\.?/g,'等待超过 $1 毫秒，已超时'],
@@ -63,12 +66,12 @@ function inline(value){
  let text=value;
  for(const [re,replacement] of wording)text=text.replace(re,replacement);
  for(const [re,label] of names)text=text.replace(re,()=>label);
- return text;
+ return text.replace(/等待执行\s*手机端\s*登录/g,'等待手机端登录').replace(/等待执行\s*电脑端\s*登录/g,'等待电脑端登录');
 }
 function structure(value,depth=0,key=''){
  if(Array.isArray(value))return value.map(v=>structure(v,depth+1,key));
  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[logFields[k]||additional[k]||k,structure(v,depth+1,k)]));
- if(typeof value==='string')return preserveKey(key)?value:render(value,depth+1).text;
+ if(typeof value==='string')return key==='offerId'?activityLabel(value):preserveKey(key)?value:render(value,depth+1).text;
  return value;
 }
 const preserveKey=key=>/^(?:email|userName|account|query|lastQuery|title|url|path|offerId|operationId|runId|userAgent|selector|stackFrame)$/i.test(key);
@@ -81,6 +84,7 @@ function matchTemplate(text,depth){
   let known=true;
   const translated=rule.zh.replace(/\{(\d+)\}/g,(_,n)=>{
    const value=values[n]??'';
+   if(rule.en.includes('offerId={'+n+'}'))return activityLabel(value);
    if(!value||rule.keep.includes(Number(n))||technical(value))return value;
    const result=render(value,depth+1);known&&=result.known;return result.text;
   });
@@ -127,7 +131,10 @@ function render(raw,depth=0){
 export function chineseLog(value){
  let text=String(value??'');
  text=text.replace(/^\[[^\]]+\]\s*\[run_daily\.sh\]\s*/, '');
- return render(text);
+ const result=render(text);
+ // Also accept already-rendered rows pasted/exported by previous versions.
+ if(/^(?:系列任务进度|没有其他可用步骤)[；;]/.test(result.text))result.text=result.text.replace(/(活动标识[：:]\s*)([A-Za-z0-9_:-]+)/g,(_,prefix,id)=>prefix+activityLabel(id));
+ return result;
 }
 export const diagnosticChinese=value=>chineseLog(value).text;
 export function chineseLogTag(tag){

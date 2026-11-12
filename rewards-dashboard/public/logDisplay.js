@@ -1,5 +1,7 @@
 import {escapeHtml,escapeAttr,fmtTime} from './util.js';
 import {chineseLog,chineseLogTag} from './locales/chinese-log.js';
+import {originalActivityIds} from './locales/activity-labels-zh-CN.js';
+const chineseAccount=value=>({API:'控制接口',MAIN:'主流程',SYSTEM:'系统'})[value]||value;
 const cache=new WeakMap();
 export function preferredLogDisplay(storage,chineseUi=true){
  try{
@@ -20,14 +22,16 @@ export function exportLogText(entries,chinese=false){
   const original=String(e.raw||e.message||'');
   if(!chinese)return original;
   const level=({debug:'调试',info:'信息',warn:'警告',error:'错误',success:'成功'})[e.level];
-  const metadata=[e.ts||e.receivedAt,e.accountName||e.user||e.email||e.userName,level,e.title?chineseLogTag(e.title):null].filter(Boolean).map(s=>`[${s}]`).join(' ');
+  const metadata=[e.ts||e.receivedAt,chineseAccount(e.accountName||e.user||e.email||e.userName),level,e.title?chineseLogTag(e.title):null].filter(Boolean).map(s=>`[${s}]`).join(' ');
   return `${metadata?metadata+' ':''}${translatedLog(e)}`;
  }).join('\n');
 }
 export function renderLogEntry(e,mode='zh',chineseUi=true){
  const original=logMessage(e),translated=mode==='original'?original:translatedLog(e);
  const time=e.ts||e.receivedAt;
- const account=e.accountName||e.user||e.email||e.userName||'';
+ const rawAccount=e.accountName||e.user||e.email||e.userName||'';
+ const account=mode==='original'?rawAccount:chineseAccount(rawAccount);
+ const identifiers=mode==='original'?[]:originalActivityIds(original);
  const level=mode!=='original'?({debug:'调试',info:'信息',warn:'警告',error:'错误',success:'成功'})[e.level]||'记录':e.level;
  const tag=mode==='original'?(e.title||e.level||''):chineseLogTag(e.title||'');
  return `<div class="log-line log-line--${escapeAttr(e.level)}">
@@ -35,5 +39,5 @@ export function renderLogEntry(e,mode='zh',chineseUi=true){
  <span class="log-level log-level--${escapeAttr(e.level)}">${escapeHtml(level)}</span>
  <span class="log-tag">${escapeHtml(tag)}</span>
  ${account?`<span class="log-account">${escapeHtml(account)}</span>`:''}
- <div class="log-msg">${escapeHtml(translated)}</div></div>`;
+ <div class="log-msg"${identifiers.length?` title="${escapeAttr('原始活动标识：'+identifiers.join('，'))}"`:''}>${escapeHtml(translated)}</div></div>`;
 }

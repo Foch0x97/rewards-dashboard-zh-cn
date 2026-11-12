@@ -358,7 +358,15 @@ export const logTerms = {
  "any": "不限国家",
  "all": "全部",
  "no": "否",
- "yes": "是"
+ "yes": "是",
+ "Bing App Streak": "必应应用连续签到",
+ "Bing Search Streak": "必应连续搜索",
+ "Browsing Streak on Edge": "微软浏览器连续浏览",
+ "pending mobile sign-in": "等待手机端登录",
+ "pending desktop sign-in": "等待电脑端登录",
+ "mobile sign-in": "手机端登录",
+ "desktop sign-in": "电脑端登录",
+ "sign-in": "登录"
 };
 export const logFields = {
  "accounts": "账号数",
@@ -525,7 +533,8 @@ export const logFields = {
  "cluster": "关联搜索组",
  "complete": "已完成",
  "max": "上限",
- "earned": "已获取积分"
+ "earned": "已获取积分",
+ "streak": "连续签到进度"
 };
 export const logTags = {
  "ACCOUNT-BALANCE": "账号余额",
