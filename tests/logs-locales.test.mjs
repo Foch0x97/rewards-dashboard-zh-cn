@@ -61,12 +61,12 @@ test('中英文都能搜索，渲染不改动原始记录，默认导出保留�
  const original=renderLogEntry(entry,'original');assert.ok(original.includes(entry.message));assert.ok(!original.includes('<details'));
  const both=renderLogEntry(entry,'zh');assert.ok(!both.includes('<pre'));assert.ok(!both.includes('<details'));
  assert.equal(entry.message,'Starting login process');assert.equal(exportLogText([entry]),entry.raw);
- assert.equal(exportLogText([entry],true),'[信息] [登录与会话] 开始登录');
+ assert.equal(exportLogText([entry],true),'[信息] [登录验证] 开始登录');
 });
 test('原文和错误详情中的HTML转义，未识别日志不重复导出',()=>{
  const entry=Object.freeze({level:'error',title:'<img src=x>',message:'Fatal error: <script>alert(1)</script>',raw:'<img onerror=alert(1)>'});
  for(const mode of ['zh','original','both']){
   const html=renderLogEntry(entry,mode);assert.ok(!html.includes('<script>'));assert.ok(!html.includes('<img'));
  }
- assert.match(exportLogText([{message:'unknown message'}],true),/暂无中文说明/);
+ assert.ok(!exportLogText([{message:'unknown message'}],true).includes('暂无中文说明'));
 });

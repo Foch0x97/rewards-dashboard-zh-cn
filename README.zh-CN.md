@@ -60,7 +60,7 @@ node --test tests/*.test.mjs
 
 动态句式集中在 `locales/dynamic-zh-CN.js`，后端内置名称和已知提示补充在 `locales/extra-messages.js`。中文日期由 `public/util.js` 按所选语言生成；中文桌面安装信息使用独立的 `manifest.zh-CN.json`，英文清单保留。
 
-日志中文说明入口为 `public/locales/chinese-log.js`，由 `public/logDisplay.js` 在浏览器显示。中文日志不拼接英文原句；翻译已知句式、字段、状态与诊断，邮箱、网址、搜索词和错误码等数据保留。未知诊断、JSON 和堆栈会提示切换英文日志查看，英文日志完整保留原文。SSE、解析器、数据库和脚本通知筛选输入不变。
+日志中文显示入口为 `public/locales/chinese-log.js`；`log-catalog-zh-CN.js` 保存人工核对的 1,018 种源码文本和 75 种补充格式，`log-vocabulary-zh-CN.js` 保存字段、状态、原因和阶段名称。源码固定在 TheNetsky v5 的 `46a6fdabb2a0fd7bcddd9fb93454c8722b0b7862`。不再用“暂无说明”或“切换英文”替代内容：结构化记录展开中文字段，诊断保留次数、时长和错误码，堆栈保留调用位置。英文日志和 SSE、数据库、脚本通知筛选输入不变。核对范围与维护方式见[日志核对记录](docs/log-translation-audit.md)。
 
 执行结果通知使用 `lib/resultSummary.js` 和 `ActivityStore.notificationAccounts()` 读取单次运行快照，区分本次完成与之前已完成、问题和不适用项目；没有明细就明确报告。长消息按字节分条，不静默截断，发送状态显示已接收条数，失败不自动重发。
 

@@ -6,7 +6,7 @@ Chinese logs|中文日志
 English logs|英文日志
 Export Chinese logs|导出中文日志
 Export English logs|导出英文日志
-Choose Chinese logs for readable explanations or English logs for the untouched original. Unrecognized records are marked explicitly. Bot notification filters still use the original logs.|中文日志显示易读的中文说明；英文日志保留完整原文。未收录的记录会明确标注，通知筛选仍使用原始日志。
+Chinese logs translate task messages, states and diagnostics, including structured data and stack locations. English logs keep the original. Bot notification filters still use the original logs.|中文日志包含任务消息、状态、失败原因、结构化字段和调用位置；英文日志保留原文。脚本通知筛选仍使用原始日志。
 Chinese explanations appear above the original English logs. Unknown messages stay unchanged. Bot notification filters still match the original logs.|中文说明显示在英文原文上方；未知日志保持原样。脚本的通知筛选仍匹配原始日志。
 Whitelist: account starts, login approvals, account/run results and account failures|白名单：账号开始、登录确认、账号和本轮结果、账号失败
 Feishu / Lark|飞书 / Lark

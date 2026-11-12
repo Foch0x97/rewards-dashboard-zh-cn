@@ -4,7 +4,7 @@
 
 ## Fork: execution result notifications
 
-The log view has two separate modes: **Chinese logs** and **English logs**, with separate exports. Chinese is the default for the Chinese UI; English keeps original entries intact. Legacy bilingual preferences switch to Chinese. Known messages, fields, statuses and diagnostics have readable Chinese wording; unknown diagnostics explicitly point to English logs rather than mixing languages. Translation is browser-only and never rewrites the bot notification input.
+The log view has two separate modes: **Chinese logs** and **English logs**, with separate exports. Chinese is the default for the Chinese UI; English keeps original entries intact. Legacy bilingual preferences switch to Chinese. The pinned v5 source has been audited: 1,018 source messages and 75 wrapper, diagnostic and compatibility formats have manually reviewed Chinese wording and per-template regression tests. JSON fields and stack locations are displayed instead of generic missing-translation notices; account data, queries, URLs and error codes remain intact. See [the audit](docs/log-translation-audit.md). Translation is browser-only and never rewrites the bot notification input.
 
 Open **Config → Execution result notifications**, select the channels you need, fill in their credentials, choose the notification language, and save before testing. The form, help text and known errors support English and Simplified Chinese. The message language is a separate setting, not tied to the current browser's interface language.
 

@@ -154,7 +154,7 @@ export default {
                     <button type="button" id="logClear" class="btn">Clear</button>
                 </div>
 
-                <p class="hint">Choose Chinese logs for readable explanations or English logs for the untouched original. Unrecognized records are marked explicitly. Bot notification filters still use the original logs.</p>
+                <p class="hint">Chinese logs translate task messages, states and diagnostics, including structured data and stack locations. English logs keep the original. Bot notification filters still use the original logs.</p>
                 <div class="log-box" id="logBox" tabindex="0" aria-live="off">
                     <p class="empty-note">Waiting for log lines\u2026</p>
                 </div>
