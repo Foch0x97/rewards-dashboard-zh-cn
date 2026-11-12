@@ -5,8 +5,8 @@ import {chineseLog} from '../rewards-dashboard/public/locales/chinese-log.js';
 import {renderLogEntry,exportLogText} from '../rewards-dashboard/public/logDisplay.js';
 const ids=[
  ['WW_pcparent_FY27_Duolingo3M_punchcard','多邻国推广任务卡'],
- ['WW_pcparent_RewardsApp_weekly_Exclusive_Novw2_2026_punchcard','积分应用每周专属任务卡（2026年11月第2周）'],
- ['ENWW_pcparent_FY27_BingMonthlyPC_Nov_punchcard','必应每月电脑端任务卡（11月）'],
+ ['WW_pcparent_RewardsApp_weekly_Exclusive_Novw2_2026_punchcard','积分应用每周专属任务卡'],
+ ['ENWW_pcparent_FY27_BingMonthlyPC_Nov_punchcard','必应每月电脑端任务卡'],
 ];
 test('实际日志的三类任务卡显示中文名称，保留原日志及编号的核对入口',()=>{
  for(const [id,label] of ids){
@@ -37,4 +37,11 @@ test('实际残留的连续签到、登录等待和网络错误有明确中文',
  for(const [raw,expected] of samples){const text=chineseLog(raw).text;for(const word of expected)assert.ok(text.includes(word),text);assert.ok(!/Bing App Streak|streak=|sign-in| at https/.test(text),text);}
  assert.ok(renderLogEntry({user:'API',message:'Run partial (code 0).',level:'warn'},'zh').includes('控制接口'));
  assert.ok(renderLogEntry({user:'API',message:'Run partial (code 0).',level:'warn'},'original').includes('API'));
+});
+
+test('不同月份、周次与年份复用固定名称，无需按日期更新中文名称',()=>{
+ for(const month of ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']){
+  assert.equal(activityLabel(`WW_pcparent_RewardsApp_weekly_Exclusive_${month}w4_2027_punchcard`),'积分应用每周专属任务卡');
+  assert.equal(activityLabel(`ENWW_pcparent_FY28_BingMonthlyPC_${month}_punchcard`),'必应每月电脑端任务卡');
+ }
 });
